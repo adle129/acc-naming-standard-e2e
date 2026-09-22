@@ -1,0 +1,31 @@
+# Secrets and local auth
+.env
+auth_state.json
+
+# Generated artifacts
+reports/**
+!reports/.gitkeep
+!reports/screenshots/
+reports/screenshots/**
+!reports/screenshots/.gitkeep
+logs/**
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

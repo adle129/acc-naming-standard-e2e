@@ -1,0 +1,92 @@
+step 1. access test project
+https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4
+
+step 2. click Files->Name-standard applied folder
+URL changed to be 
+https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4?folderUrn=urn%3Aadsk.wipprod%3Afs.folder%3Aco.2y8oj37iS72xv7wGBg9Z3w&viewModel=detail&moduleId=folders
+
+step 3. Click "Upload" button in Action Bar
+After that, the URL is not changed and there is an Upload dialog shown up
+
+step 4. Click "Select files" button in Upload dialog
+
+Step 5. Select the a.txt file and click OK
+
+step 6. It goes to "Upload files" page and the URL is changed:
+
+URL is https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4?folderUrn=urn%3Aadsk.wipprod%3Afs.folder%3Aco.2y8oj37iS72xv7wGBg9Z3w&viewModel=detail&moduleId=folders
+
+There is 1 file awaiting upload to project and shown in the list
+
+step 7. Edit the settings for the new added file as below: 
+a. Change the value of "Project" to be "test2"
+
+b. Select "ZZ" from "Volume/System" drop down list
+There are two item selections for "Volume/System": ZZ and XX
+
+c. Select "ZZ" from  "Level/Location" drop down list
+There are 9 item selections for "Level/Location": ZZ/XX/00/01/02/M1/M2/B1/B2
+
+d. Select "CA" from "Type" custom dropdown list
+There are total 28 item selects for "Type". 
+
+e. Select "D" from "Role" custom dropdown list
+
+f. Set "Number" to be 1234
+
+g. Select "S0" from "Status" custom dropdown list
+
+h. Set "Revision" to be "dff" 
+
+j. Select "Ac_05" for "Classification"
+
+k. Set "custom fields" to be "222"
+
+step 8. Click "Upload" button in "Upload Files" page and then it will turn to "Upload" dialog again. As the result, there is total 1 file uploading and shown in the dialog with uploading status. It changes from "Uploading - 0%" to "Uploading -100%" and finally to be "Uploaded to Name-standard". There is also pop up message shown "1 file has been successfully uploaded"
+URL like:
+https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4?folderUrn=urn%3Aadsk.wipprod%3Afs.folder%3Aco.2y8oj37iS72xv7wGBg9Z3w&viewModel=detail&moduleId=folders
+
+step9. Click "Done" button in "Upload" dialog. It returns to the folders page again and the new added file is shown in files list
+URL like:https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4?folderUrn=urn%3Aadsk.wipprod%3Afs.folder%3Aco.2y8oj37iS72xv7wGBg9Z3w&viewModel=detail&moduleId=folders
+
+step10. Click the checkbox of the new added file and then click "delete" from Action Bar
+
+step11. Click "Delete" button in "Delete" dialog.
+
+step12. It returns to Project Files list and the file is deleted and not shown in Files List, there is one message pop up "1 file was deleted"
+
+step13. Click "Deleted Items" button from Action Bar, it goes to Deleted Items page and the deleted file is shown in the list
+URL: https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4?folderUrn=urn%3Aadsk.wipprod%3Afs.folder%3Aco.2y8oj37iS72xv7wGBg9Z3w&viewModel=detail&moduleId=deleted
+
+step14: Click the checkbox of the file item and then the "Restore" button is shown. Click the "Restore" button form Action Bar
+
+step15: Click "Restore" button in the Restore dialog.
+
+step16: It shows "Restore Items" dailog and click "continue" button
+
+step17: It goes to Restore page and user can edit the file settings
+
+URL: https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4?folderUrn=urn%3Aadsk.wipprod%3Afs.folder%3Aco.2y8oj37iS72xv7wGBg9Z3w&viewModel=detail&moduleId=deleted
+
+step18: Change the project value to be "res-1", after that it pop up error message with "The delimiter character can't be used in an attribute value".
+
+
+step19: Change the project value to be "res1", the error message is dismissed and click "Restore" button
+
+
+step20: It returns to Deleted Items page again, and wait for a moment, the file is disappeared and there is pop up message "1 file successfully restored".
+
+step21: Click "Files" link and it returns to Project Files list again
+URL: https://acc.autodesk.com/docs/files/projects/4ac3aedc-e6d5-4bbb-91f3-c49c48af48f4?folderUrn=urn%3Aadsk.wipprod%3Afs.folder%3Aco.2y8oj37iS72xv7wGBg9Z3w&viewModel=detail&moduleId=folders
+
+As the result, the deleted file is restored and shown in the Files list again.
+
+
+
+
+
+
+
+
+
+
