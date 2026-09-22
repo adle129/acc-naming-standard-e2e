@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REQUIRED_PATTERNS = (
     ".env",
     "auth_state.json",
+    "config/fernet.key",
     "reports/**",
     "logs/**",
 )
@@ -19,6 +20,7 @@ REQUIRED_PATTERNS = (
 IGNORED_PATHS = (
     ".env",
     "auth_state.json",
+    "config/fernet.key",
     "reports/report.html",
     "logs/run_example.log",
 )

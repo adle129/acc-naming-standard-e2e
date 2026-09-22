@@ -268,14 +268,13 @@ Example output:
 ### FR-12 — Credential security & auth bootstrap
 
 - **Password encryption for the public repository:** the committed `config/credentials.json` holds the username and a **Fernet-encrypted password token** (`cryptography` library); `utils/config.py` decrypts it at runtime. The plaintext password never appears in the repo, logs, or reports.
-- Credential resolution order: local `ACC_PASSWORD` in `.env` (owner's own credentials — not committed) → encrypted token in `config/credentials.json`. Fail fast if neither is available.
+- **The Fernet decryption key is not committed.** The reviewer receives it out of band and places it in local `.env` as `ACC_FERNET_KEY`, or in git-ignored `config/fernet.key`. Without the key, the encrypted token cannot be decrypted.
+- Credential resolution order: local `ACC_PASSWORD` in `.env` (owner's own credentials — not committed) → encrypted token in `config/credentials.json` plus the local Fernet key. Fail fast if neither password path is available, or if the token is present but the key is missing.
 - `.env.example` is committed with key names and placeholders only.
-- Rotation: `python utils/encrypt_password.py` generates a fresh key + token pair for `config/credentials.json`.
-
-> **Honest note:** the decryption key ships with the repository (required so the reviewer can run the project out of the box). This protects against plaintext exposure and secret scanning (e.g., gitleaks), **not** against a determined attacker who holds the repo — that would require not committing the key, at the cost of an out-of-box run. This trade-off is deliberate and documented in README.
+- Rotation: `python utils/encrypt_password.py` generates a fresh key + token pair. The token is written to `config/credentials.json`; the key is written only to local `.env` / `config/fernet.key` and must never be committed.
 - `auth_state.json` (Playwright storage state) is git-ignored.
 - The framework must never print credentials, and must not write them into logs or reports.
-- A pre-commit / CI check ensures `.env` and `auth_state.json` are not tracked.
+- A pre-commit / CI check ensures `.env`, `auth_state.json`, and `config/fernet.key` are not tracked.
 
 **Authentication — automated login inside the test run** (required by the homework statement: "Automate the steps, including the login"). The suite must be runnable in one command with no manual step:
 
@@ -330,12 +329,12 @@ acc-naming-standard-e2e/
 │   ├── logger.py                   # ⭐ Logging system + @step decorator
 │   ├── auth.py                     # storage_state save / load (optional login cache; automated login is primary)
 │   ├── setup_auth.py               # Interactive headed bootstrap → auth_state.json (handles SSO/MFA)
-│   └── encrypt_password.py         # CLI helper: key + Fernet token for config/credentials.json
+│   └── encrypt_password.py         # CLI helper: local Fernet key + token for config/credentials.json
 ├── data/
 │   └── files/                      # Static sample files (committed); Phase 1 needs a.txt only
 │       └── a.txt                   #   (generated/ + file_factory deferred to Phase 2)
 ├── config/
-│   └── credentials.json            # Committed: username + Fernet-encrypted password token (no plaintext)
+│   └── credentials.json            # Committed: username + Fernet-encrypted password token (key is local-only)
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py                 # Fixtures, hooks, screenshot-on-failure
@@ -359,7 +358,7 @@ The repository root must contain `README.md` (English) covering:
 
 1. What the framework is and what it tests.
 2. Prerequisites (Python version, `pip install -r requirements.txt`, `playwright install`).
-3. Configuration — copy `.env.example` to `.env` and fill it; **never commit `.env`**.
+3. Configuration — copy `.env.example` to `.env` and fill it; **never commit `.env`**. The reviewer also places the separately provided Fernet key in `ACC_FERNET_KEY` (or `config/fernet.key`).
 4. How to run: default, by suite, by browser, parallel, headed.
 5. Where to find reports, screenshots and logs.
 6. How to regenerate the login state (`auth_state.json`), including the MFA note.
@@ -479,7 +478,7 @@ Tick every row before the framework is considered done:
 | 12 | FR-10 Screenshot           | A deliberate failure produces a PNG referenced in the log                         | 1     | ☐    |
 | 13 | FR-11 Step logging         | Every page action emits a step line; a failure is diagnosable from the log alone  | 1     | ☐    |
 | 14 | FR-11 No sleeps            | Search for `time.sleep` / `wait_for_timeout` — zero unjustified hits              | 1     | ☐    |
-| 15 | FR-12 Secrets              | `.env` and `auth_state.json` are git-ignored; the password exists in the repo only as a Fernet token in `config/credentials.json`; no credential appears in logs | 1 | ☐ |
+| 15 | FR-12 Secrets              | `.env`, `auth_state.json`, and `config/fernet.key` are git-ignored; the password exists in the repo only as a Fernet token in `config/credentials.json`; the decryption key is local-only / sent out of band; no credential appears in logs | 1 | ☐ |
 | 16 | FR-13 Structure            | Directory tree matches FR-13 exactly                                              | 1     | ☐    |
 | 17 | FR-14 README               | All eight required sections are present                                           | 1     | ☐    |
 | 18 | NFR-06 Clean test data     | A run leaves at most one uniquely-named restored file (documented Phase-1 deviation) | 1  | ☐    |

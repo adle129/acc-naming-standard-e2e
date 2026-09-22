@@ -203,4 +203,4 @@ acc-naming-standard-e2e/
 1. **Cleanup policy** — ✅ decided: leave the restored file per run (matches the test case's final state); documented as the Phase-1 NFR-06 deviation in PRD.
 2. **Apply the PRD edits** — ✅ done: PRD.md is now v1.2; field-validation-rules.md updated.
 3. **Credentials/account** — ✅ decided: automated login in the test run with `.env` credentials (homework requires login automation); `setup_auth.py` kept as MFA/SSO fallback only.
-4. **Password encryption for GitHub** — ✅ decided: password ships as a Fernet-encrypted token in `config/credentials.json` (decrypted at runtime; local `.env` plaintext override takes precedence). Honest limitation documented: the key ships with the repo (out-of-box reviewer run), so this guards against plaintext exposure / secret scanning, not a determined attacker.
+4. **Password encryption for GitHub** — ✅ decided: password ships as a Fernet-encrypted token in `config/credentials.json` (decrypted at runtime; local `.env` plaintext override takes precedence). The Fernet key is **not** committed; the reviewer receives it out of band and puts it in `ACC_FERNET_KEY` or `config/fernet.key`.
