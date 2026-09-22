@@ -62,6 +62,15 @@ FORBIDDEN_WAIT = "wait_for_timeout"
 LOGGER_REL_PATH = "utils/logger.py"
 ACCEPTANCE_TEST_REL = "tests/test_acceptance.py"
 CANARY_TEST_REL = "tests/test_framework_smoke.py"
+AUTH_STATE_REL = "auth_state.json"
+SAMPLE_STORAGE_COOKIES_KEY = "cookies"
+SAMPLE_STORAGE_ORIGINS_KEY = "origins"
+SAMPLE_STORAGE_STATE = {
+    SAMPLE_STORAGE_COOKIES_KEY: [],
+    SAMPLE_STORAGE_ORIGINS_KEY: [],
+}
+SAMPLE_INVALID_AUTH_TEXT = "{not-json"
+SAMPLE_AUTH_ARRAY_TEXT = "[]"
 
 # Full env used when a test wants the plaintext-password path.
 BASE_ENV = {
