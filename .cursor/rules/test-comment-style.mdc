@@ -1,0 +1,38 @@
+---
+description: Framework and product tests must document each method and each line
+globs: tests/**/*.py
+alwaysApply: false
+---
+
+# Test comment style
+
+When adding or editing tests, document them so a reviewer can read the file without guessing.
+
+## Required on every function
+
+- A docstring that states **what the test or helper proves / does**.
+- An `Args:` section for every parameter (including pytest fixtures).
+- `Returns:` / `Yields:` / `Raises:` when those apply.
+
+## Required inside the function body
+
+- A short comment on **every statement** explaining why that line is there, not just what the syntax does.
+- Do not leave uncommented setup, calls, or assertions.
+
+## Example
+
+```python
+def test_missing_required_setting_fails_fast(tmp_path: Path) -> None:
+    """Prove a missing required env key raises ConfigError immediately.
+
+    Args:
+        tmp_path: Pytest temp directory used as an isolated project root.
+    """
+    # Copy BASE_ENV so we can delete one key without mutating the constant.
+    environ = dict(BASE_ENV)
+    # Project ID is required; removing it must stop the run before login.
+    del environ["ACC_PROJECT_ID"]
+    # The message names the missing key so the reviewer knows what to set.
+    with pytest.raises(ConfigError, match="ACC_PROJECT_ID"):
+        load_settings(environ=environ, root=tmp_path)
+```
