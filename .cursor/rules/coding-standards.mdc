@@ -1,0 +1,64 @@
+---
+description: Project coding standards from the T1–T3 retrospective — readability, no hardcode, comments, secrets
+alwaysApply: true
+---
+
+# Coding standards
+
+## Review before commit
+
+Finish the work, run the gate, then **review with the user**. Do not `git commit` or merge until they explicitly ask. See `git-feature-branch.mdc`.
+
+## No hardcode
+
+- Do not put URLs, env key names, file names, error text, step labels, timeouts, or sample credentials inline in methods.
+- Define them once as named constants in the owning module (`utils/config.py`, `utils/logger.py`) or in `tests/framework/support.py`.
+- Tests import those constants. If a message changes, only the constant changes.
+- `docs/sample_testcase/` is the manual walkthrough. Do not put a `testcase/` folder at repo root.
+
+## Simple statements first
+
+Write code a reviewer can follow in one pass. Prefer plain `if` / `for` / assignment over clever one-liners.
+
+- Use a `for` loop instead of a nested comprehension or `**{key: value}` unpacking.
+- Use `if` / `else` instead of stacked `a or b or c` when the order is a business rule.
+- Do not use walrus `:=`, metaclass tricks, or custom descriptors unless there is no simpler way.
+- Keep `functools.wraps`, Fernet, and Playwright auto-wait: those are for correctness and speed, not style.
+- Do not add extra loops or I/O just to look simple. Simple code must stay stable and cheap.
+
+```python
+# ❌ HARD TO READ
+missing = [key for key in REQUIRED_ENV_KEYS if not _clean(environ.get(key))]
+environ = required_env(**{ENV_FERNET_KEY: key})
+
+# ✅ EASY TO READ
+missing = []
+for key in REQUIRED_ENV_KEYS:
+    if not _clean(environ.get(key)):
+        missing.append(key)
+
+environ = required_env()
+environ[ENV_FERNET_KEY] = key
+```
+
+## Readable methods
+
+- One purpose per function. Extract helpers instead of repeating setup (env maps, credentials files, log reads).
+- Names say what the value is (`SAMPLE_ENV_PASSWORD`, `MSG_DECRYPT_FAILED`), not `s1` / `data` / `tmp`.
+- Prefer `load_settings(environ=..., root=tmp_path)` over reading the real machine `.env` in tests.
+
+## Comments
+
+- **Tests** (`tests/**/*.py`): docstring (what it proves) + `Args` / `Returns` / `Raises` + a why-comment on every statement. See `test-comment-style.mdc`.
+- **Framework modules you implement** (`utils/`, later pages/dialogs): docstring on every public function, plus a short why-comment on non-obvious lines. Do not comment syntax (`# increment i`).
+
+## Secrets
+
+- Never commit `.env`, `config/fernet.key`, `auth_state.json`, or a plaintext password.
+- Repo may contain `config/credentials.json` username + Fernet token only.
+- Logs, `repr()`, and exception messages must not contain passwords or keys.
+
+## Framework vs product tests
+
+- `tests/framework/` is FR-15 Layer A. It must not open ACC or assert product UI.
+- Do not add `tests/test_acceptance.py` or `tests/test_framework_smoke.py` until M5.

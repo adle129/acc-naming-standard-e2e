@@ -11,10 +11,11 @@ Do **not** implement task work directly on `master`.
 
 1. Start from the latest `master` (`git checkout master` and update if needed).
 2. Create a feature branch for **this task only**, named `feature/<task>` (example: `feature/t3-logger`).
-3. Develop and commit only on that branch.
-4. Verify before merge: `ruff check .`, `pytest --collect-only`, and `pytest -m framework` (plus any task-specific tests).
-5. After verification passes, merge the feature branch into `master`.
-6. Do not continue the next task on the same feature branch. Open a new branch from the updated `master`.
+3. Develop only on that branch.
+4. Verify: `ruff check .`, `pytest --collect-only`, and `pytest -m framework` (plus any task-specific tests).
+5. **Stop and review with the user before any commit.** Summarize what changed, why, and any risk. Do **not** `git commit` or merge until the user explicitly asks.
+6. After the user approves, commit on the feature branch, then merge into `master`.
+7. Do not continue the next task on the same feature branch. Open a new branch from the updated `master`.
 
 ## Examples
 
@@ -22,9 +23,11 @@ Do **not** implement task work directly on `master`.
 # ✅ GOOD
 git checkout master
 git checkout -b feature/t3-logger
-# ... implement, test, then merge into master ...
+# implement + verify, then review with the user
+# commit and merge only after the user says so
 
 # ❌ BAD
-# implement T3 / T4 / docs changes directly on master
+# implement directly on master
+# commit or merge as soon as tests pass, without a review
 # reuse feature/t3-logger for the next unrelated task
 ```

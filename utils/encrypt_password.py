@@ -16,7 +16,13 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from utils.config import REPO_ROOT, encrypt_password_token, generate_fernet_key  # noqa: E402
+from utils.config import (  # noqa: E402
+    REPO_ROOT,
+    credentials_path,
+    encrypt_password_token,
+    fernet_key_path,
+    generate_fernet_key,
+)
 
 
 def write_credentials(username: str, password_token: str, path: Path) -> None:
@@ -58,13 +64,13 @@ def main(argv: list[str] | None = None) -> int:
 
     key = generate_fernet_key()
     token = encrypt_password_token(password, key)
-    credentials_path = args.root / "config" / "credentials.json"
-    key_path = args.root / "config" / "fernet.key"
-    write_credentials(args.username, token, credentials_path)
-    write_fernet_key(key, key_path)
+    creds_file = credentials_path(args.root)
+    key_file = fernet_key_path(args.root)
+    write_credentials(args.username, token, creds_file)
+    write_fernet_key(key, key_file)
 
-    print(f"Wrote encrypted token to {credentials_path.relative_to(args.root)}.")
-    print(f"Wrote decryption key to {key_path.relative_to(args.root)} (git-ignored).")
+    print(f"Wrote encrypted token to {creds_file.relative_to(args.root)}.")
+    print(f"Wrote decryption key to {key_file.relative_to(args.root)} (git-ignored).")
     print("Send the key to the reviewer separately. Do not commit it.")
     return 0
 

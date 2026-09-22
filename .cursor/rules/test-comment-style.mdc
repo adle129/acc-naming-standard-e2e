@@ -19,6 +19,12 @@ When adding or editing tests, document them so a reviewer can read the file with
 - A short comment on **every statement** explaining why that line is there, not just what the syntax does.
 - Do not leave uncommented setup, calls, or assertions.
 
+## No hardcode in tests
+
+- Do not inline URLs, emails, passwords, step text, or error strings in the test body.
+- Import sample data from `tests/framework/support.py` and production constants from `utils/config.py` / `utils/logger.py`.
+- If you need a new sample value, add a named constant in `support.py` first.
+
 ## Example
 
 ```python

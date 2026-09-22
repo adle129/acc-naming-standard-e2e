@@ -7,7 +7,34 @@ from pathlib import Path
 
 import pytest
 
+from tests.framework.support import (
+    FIRST_STEP_LABEL,
+    FORBIDDEN_SLEEP,
+    FORBIDDEN_WAIT,
+    LOGGER_REL_PATH,
+    REPO_ROOT,
+    SAMPLE_ACCEPTANCE_TEST_NAME,
+    SAMPLE_BANNER_ERROR,
+    SAMPLE_LOGIN_PASSWORD,
+    SAMPLE_LOGIN_USERNAME,
+    SAMPLE_PROJECT_VALUE,
+    SAMPLE_SCOPE_ERROR,
+    SAMPLE_SCREENSHOT_REL,
+    SAMPLE_TYPE_VALUE,
+    STEP_CLICK_UPLOAD,
+    STEP_EXPECT_BANNER,
+    STEP_FILL_PROJECT,
+    STEP_LOGIN,
+    STEP_OPEN_FILES,
+    STEP_PICK_TYPE,
+    read_text,
+)
 from utils.logger import (
+    DURATION_SUFFIX,
+    SECRET_MASK,
+    STEP_RESULT_FAIL,
+    STEP_RESULT_OK,
+    STEP_RESULT_START,
     configure_logging,
     reset_logging,
     set_screenshot_path,
@@ -18,9 +45,6 @@ from utils.logger import (
 
 # Mark every test in this module as a framework self-check, not a product case.
 pytestmark = pytest.mark.framework
-
-# Repository root: tests/framework -> tests -> repo.
-ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.fixture(autouse=True)
@@ -38,24 +62,11 @@ def _isolated_logger(tmp_path: Path) -> Iterator[Path]:
     # Point the file handler at tmp_path so we never touch repo logs/.
     log_path = configure_logging(log_dir=tmp_path)
     # Use the acceptance-test name so log lines match the PRD example shape.
-    set_test_name("test_upload_delete_restore")
+    set_test_name(SAMPLE_ACCEPTANCE_TEST_NAME)
     # Hand the log path to the test so it can read what @step wrote.
     yield log_path
     # Always close handlers so Windows can delete the temp directory.
     reset_logging()
-
-
-def _read(log_path: Path) -> str:
-    """Return the full text of a run log.
-
-    Args:
-        log_path: Log file created by configure_logging.
-
-    Returns:
-        UTF-8 contents of the log file.
-    """
-    # Tests assert on substrings; keep the helper to one read.
-    return log_path.read_text(encoding="utf-8")
 
 
 def test_successful_step_writes_pipe_line(_isolated_logger: Path) -> None:
@@ -65,7 +76,7 @@ def test_successful_step_writes_pipe_line(_isolated_logger: Path) -> None:
         _isolated_logger: Run log path created by the autouse fixture.
     """
 
-    @step("fill Project = {value}")
+    @step(STEP_FILL_PROJECT)
     def fill_project(value: str) -> str:
         """Stand-in page-object action that echoes the formatted value.
 
@@ -79,21 +90,21 @@ def test_successful_step_writes_pipe_line(_isolated_logger: Path) -> None:
         return value
 
     # Call the wrapped action the way a later Page Object method will.
-    assert fill_project("hw472") == "hw472"
+    assert fill_project(SAMPLE_PROJECT_VALUE) == SAMPLE_PROJECT_VALUE
     # Read the file handler output, not stdout, so DEBUG lines are included.
-    text = _read(_isolated_logger)
+    text = read_text(_isolated_logger)
     # Passing steps are INFO, matching console-visible output.
     assert "INFO" in text
     # The fixture-set test name must appear in the pipe line.
-    assert "test_upload_delete_restore" in text
+    assert SAMPLE_ACCEPTANCE_TEST_NAME in text
     # First action in this test is numbered STEP 1.
-    assert "STEP 1" in text
+    assert FIRST_STEP_LABEL in text
     # {value} is interpolated from the function argument.
-    assert "fill Project = hw472" in text
+    assert STEP_FILL_PROJECT.format(value=SAMPLE_PROJECT_VALUE) in text
     # Result column for a clean return is OK.
-    assert "OK" in text
+    assert STEP_RESULT_OK in text
     # Duration is always recorded so waits are visible without sleeps.
-    assert "ms" in text
+    assert DURATION_SUFFIX in text
 
 
 def test_failed_step_is_diagnosable_from_the_log(_isolated_logger: Path) -> None:
@@ -103,9 +114,9 @@ def test_failed_step_is_diagnosable_from_the_log(_isolated_logger: Path) -> None
         _isolated_logger: Run log path created by the autouse fixture.
     """
     # T10 will set this from the screenshot hook; here we inject the path.
-    set_screenshot_path("reports/screenshots/test_upload_delete_restore.png")
+    set_screenshot_path(SAMPLE_SCREENSHOT_REL)
 
-    @step("expect banner hidden")
+    @step(STEP_EXPECT_BANNER)
     def expect_banner_hidden() -> None:
         """Stand-in assertion that always fails like a web-first expect.
 
@@ -113,36 +124,36 @@ def test_failed_step_is_diagnosable_from_the_log(_isolated_logger: Path) -> None
             AssertionError: Always, so the decorator takes the FAIL path.
         """
         # The message must show up in the log so a rerun is unnecessary.
-        raise AssertionError("banner still visible")
+        raise AssertionError(SAMPLE_BANNER_ERROR)
 
     # The decorator must re-raise; logging is extra, not a swallow.
-    with pytest.raises(AssertionError, match="banner still visible"):
+    with pytest.raises(AssertionError, match=SAMPLE_BANNER_ERROR):
         expect_banner_hidden()
 
     # Inspect the file after the exception has been logged.
-    text = _read(_isolated_logger)
+    text = read_text(_isolated_logger)
     # Failures use ERROR so they stand out in the file and on the console.
     assert "ERROR" in text
     # The failing action is still the first step in this isolated test.
-    assert "STEP 1" in text
+    assert FIRST_STEP_LABEL in text
     # Action text is the decorator description, not the Python traceback only.
-    assert "expect banner hidden" in text
+    assert STEP_EXPECT_BANNER in text
     # Result column is FAIL, matching the PRD example.
-    assert "FAIL" in text
+    assert STEP_RESULT_FAIL in text
     # Exception type + message make the log enough to diagnose the failure.
-    assert "AssertionError: banner still visible" in text
+    assert f"AssertionError: {SAMPLE_BANNER_ERROR}" in text
     # Screenshot path is appended so the reviewer can open the PNG next.
-    assert "screenshot: reports/screenshots/test_upload_delete_restore.png" in text
+    assert SAMPLE_SCREENSHOT_REL in text
 
 
 def test_step_redacts_password_arguments(_isolated_logger: Path) -> None:
-    """Prove password-like arguments are replaced with *** in the log.
+    """Prove password-like arguments are replaced with the secret mask in the log.
 
     Args:
         _isolated_logger: Run log path created by the autouse fixture.
     """
 
-    @step("login as {username} password={password}")
+    @step(STEP_LOGIN)
     def login(username: str, password: str) -> None:
         """Stand-in login action that would otherwise leak the password.
 
@@ -154,15 +165,15 @@ def test_step_redacts_password_arguments(_isolated_logger: Path) -> None:
         return None
 
     # Pass a realistic secret; it must never appear in the log file.
-    login("reviewer@example.com", "super-secret")
+    login(SAMPLE_LOGIN_USERNAME, SAMPLE_LOGIN_PASSWORD)
     # Read after the step so the redacted line is on disk.
-    text = _read(_isolated_logger)
+    text = read_text(_isolated_logger)
     # Non-secret fields stay readable for diagnosis.
-    assert "reviewer@example.com" in text
+    assert SAMPLE_LOGIN_USERNAME in text
     # The raw password must be absent from every log line.
-    assert "super-secret" not in text
+    assert SAMPLE_LOGIN_PASSWORD not in text
     # The placeholder proves the field was present and intentionally masked.
-    assert "password=***" in text
+    assert f"password={SECRET_MASK}" in text
 
 
 def test_step_scope_logs_ok_and_fail(_isolated_logger: Path) -> None:
@@ -172,23 +183,23 @@ def test_step_scope_logs_ok_and_fail(_isolated_logger: Path) -> None:
         _isolated_logger: Run log path created by the autouse fixture.
     """
     # Ad-hoc block used when a page object is not worth extracting yet.
-    with step_scope("open files page"):
+    with step_scope(STEP_OPEN_FILES):
         # Empty body is enough to exercise the OK path.
         pass
     # The inner error must surface to the test runner after it is logged.
-    with pytest.raises(RuntimeError, match="boom"):
-        with step_scope("click Upload"):
+    with pytest.raises(RuntimeError, match=SAMPLE_SCOPE_ERROR):
+        with step_scope(STEP_CLICK_UPLOAD):
             # Fail after the scope has started so FAIL + exception are written.
-            raise RuntimeError("boom")
+            raise RuntimeError(SAMPLE_SCOPE_ERROR)
 
     # Both scopes share one log file from the fixture.
-    text = _read(_isolated_logger)
+    text = read_text(_isolated_logger)
     # First scope description is present on an OK line.
-    assert "open files page" in text
+    assert STEP_OPEN_FILES in text
     # Second scope description is present on a FAIL line.
-    assert "click Upload" in text
+    assert STEP_CLICK_UPLOAD in text
     # Exception text is required so the log replaces a rerun.
-    assert "RuntimeError: boom" in text
+    assert f"RuntimeError: {SAMPLE_SCOPE_ERROR}" in text
 
 
 def test_file_handler_keeps_debug_start_lines(_isolated_logger: Path) -> None:
@@ -198,7 +209,7 @@ def test_file_handler_keeps_debug_start_lines(_isolated_logger: Path) -> None:
         _isolated_logger: Run log path created by the autouse fixture.
     """
 
-    @step("pick Type = {value}")
+    @step(STEP_PICK_TYPE)
     def pick_type(value: str) -> None:
         """Stand-in dropdown action used only to emit START + OK lines.
 
@@ -209,21 +220,21 @@ def test_file_handler_keeps_debug_start_lines(_isolated_logger: Path) -> None:
         return None
 
     # Trigger both the DEBUG start line and the INFO OK line.
-    pick_type("CA")
+    pick_type(SAMPLE_TYPE_VALUE)
     # File level is DEBUG, so START must be in the file even if console is INFO.
-    text = _read(_isolated_logger)
+    text = read_text(_isolated_logger)
     # START is the file-only breadcrumb that a step began.
     assert "DEBUG" in text
-    assert "START" in text
+    assert STEP_RESULT_START in text
     # Argument formatting still applies on the start/OK action text.
-    assert "pick Type = CA" in text
+    assert STEP_PICK_TYPE.format(value=SAMPLE_TYPE_VALUE) in text
 
 
 def test_logger_module_has_no_sleeps() -> None:
     """Prove logger.py never uses time.sleep or Playwright wait_for_timeout."""
     # Read source so a future sleep cannot hide behind a helper name.
-    source = (ROOT / "utils" / "logger.py").read_text(encoding="utf-8")
+    source = read_text(REPO_ROOT / LOGGER_REL_PATH)
     # NFR-01: hard sleeps are forbidden in production framework code.
-    assert "time.sleep" not in source
+    assert FORBIDDEN_SLEEP not in source
     # Raw Playwright timeouts are also forbidden; @step uses perf_counter instead.
-    assert "wait_for_timeout" not in source
+    assert FORBIDDEN_WAIT not in source
