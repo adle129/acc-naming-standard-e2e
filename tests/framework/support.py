@@ -54,6 +54,8 @@ SAMPLE_SCREENSHOT_STAMP = "20260922_120000_000000"
 SAMPLE_SCREENSHOT_BYTES = b"PNG-fake"
 SAMPLE_OPEN_URL = SAMPLE_BASE_URL
 BASE_PAGE_REL = "pages/base_page.py"
+FILES_PAGE_REL = "pages/files_page.py"
+FOLDER_LIST_REL = "components/folder_list.py"
 STEP_FILL_PROJECT = "fill Project = {value}"
 STEP_EXPECT_BANNER = "expect banner hidden"
 STEP_LOGIN = "login as {username} password={password}"
