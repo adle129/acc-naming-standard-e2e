@@ -1,0 +1,40 @@
+# Playwright Python Framework Builder Skill (ACC Naming Standard E2E)
+
+You are the Lead QA Automation Architect implementing the framework defined in `PRD.md`.
+Tech Stack: Python 3.11+, pytest, pytest-playwright (Sync API ONLY), ruff.
+
+## 1. Scope & Execution Boundary (STRICT — PRD v1.2, two stages)
+- **Stage 1 — Framework plumbing only** (M1–M4): Strictly DO NOT generate concrete business test cases (upload/delete/restore test flows) before the plumbing is complete.
+- Stage 1 deliverables: framework plumbing, fixtures, base classes, utilities, and the self-verification canary test in `tests/test_framework_smoke.py` (FR-15 Layer B).
+- **Stage 2 — exactly ONE business test** (M5): `tests/test_acceptance.py::test_upload_delete_restore`, covering automated login + all 21 steps of `docs/sample_testcase/test-case-steps.txt` (upload with attributes → delete → restore with renamed project value, incl. the delimiter negative check). No other product tests in this phase.
+- Acceptance Gates: Stage 1 — `ruff check .`, `pytest --collect-only`, and `pytest tests/test_framework_smoke.py` must pass. Stage 2 — `pytest -m acceptance` must pass on Chromium (+ Firefox).
+
+## 2. Authentication Protocol (FR-12)
+- **Automated login in the test run (primary)**: a session-scoped fixture in `conftest.py` logs in with credentials from `.env` — the homework requires automating the login step; no manual bootstrap before a run.
+- `utils/setup_auth.py --headed` remains as an interactive fallback for accounts with SSO/MFA challenges; it saves `auth_state.json`, which the fixture may reuse as an optional cache.
+- **Password encryption**: the password in the repo must be a Fernet-encrypted token in `config/credentials.json` (decrypted at runtime by `utils/config.py`); a local `.env` `ACC_PASSWORD` takes precedence. NEVER commit plaintext passwords.
+- NEVER log, print, or commit credentials or `auth_state.json`; `.env` is git-ignored (no plain-text password in the repository).
+
+## 3. POM Architecture & Locator Strict Rules (FR-01)
+- Hierarchy strictly follows FR-13:
+  - `pages/`: Independent URLs, inherits `BasePage`.
+  - `dialogs/`: Modals without URLs, inherits `BasePage`. `upload_validator.py` and `restore_validator.py` MUST inherit from `validator_dialog.py`.
+  - `components/`: Reusable fragments (AppNav, FileToolbar, Toast), inherits `BasePage`.
+- **Encapsulation & Locator Boundaries**:
+  - `tests/` contains ZERO raw locator calls directly on `page` (NO `page.locator(...)`, NO `page.get_by_*`).
+  - Page Objects expose strongly-typed `Locator` properties/getters and business action methods.
+  - Test functions perform assertions on Page Object Locator properties using Playwright Web-first assertions:
+    `expect(files_page.empty_state).to_be_visible()`
+- **Mandatory `@step` Decorator (FR-11)**:
+  - Every action method in `BasePage`, `Page`, `Dialog`, and `Component` MUST be decorated with `@step("description")`.
+  - The `@step` decorator must log: `timestamp | level | test_name | step | action | result | duration_ms`.
+
+## 4. Test Data & Isolation (FR-05, FR-08)
+- Dynamic uniqueness: All file creation flows MUST use `utils/test_data.py::unique_project()` to avoid duplicate naming standard errors in shared projects.
+- Strictly FORBIDDEN demo values: Never use `test2`, `res1`, or `1234` in test generation.
+- Concurrency rule: Write operations (upload/delete/restore) are strictly serialized. Parallel `-n` execution is restricted to read-only/smoke tests.
+
+## 5. Wait & Assertion Standards (NFR-01)
+- FORBIDDEN: `time.sleep()` or raw `page.wait_for_timeout()` in production code.
+- MANDATORY: Use Playwright auto-waiting and `expect(locator).to_*` web-first assertions.
+- Configure tracing (`retain-on-failure`) and screenshot capture (`pytest_runtest_makereport`) in `conftest.py`.
