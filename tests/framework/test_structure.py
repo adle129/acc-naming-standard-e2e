@@ -4,10 +4,13 @@ from pathlib import Path
 
 import pytest
 
+# Mark every test in this module as a framework self-check, not a product case.
 pytestmark = pytest.mark.framework
 
+# Repository root: tests/framework -> tests -> repo.
 ROOT = Path(__file__).resolve().parents[2]
 
+# Paths required by PRD FR-13. Later tasks fill these files; they must exist now.
 EXPECTED_PATHS = [
     "pages/__init__.py",
     "pages/base_page.py",
@@ -55,10 +58,16 @@ EXPECTED_PATHS = [
 
 
 def test_fr13_scaffold_paths_exist() -> None:
+    """Prove every FR-13 scaffold path is already on disk."""
+    # Missing names are easier to fix than a single boolean failure.
     missing = [rel for rel in EXPECTED_PATHS if not (ROOT / rel).exists()]
+    # An empty list means later tasks can edit files in place.
     assert missing == [], f"Missing scaffold paths: {missing}"
 
 
 def test_product_tests_are_not_present_yet() -> None:
+    """Prove Stage 1 has not created product or canary test modules yet."""
+    # Acceptance test is Stage 2 / M5; creating it now would violate the skill.
     assert not (ROOT / "tests/test_acceptance.py").exists()
+    # Canary is also M5; Layer A lives under tests/framework/ until then.
     assert not (ROOT / "tests/test_framework_smoke.py").exists()
