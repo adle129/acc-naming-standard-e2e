@@ -16,6 +16,19 @@ from typing import Any, TypeVar
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LOGGER_NAME = "acc_e2e"
+LOG_DIR_NAME = "logs"
+LOG_FILE_PREFIX = "run_"
+TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
+LOG_FILE_STAMP_FORMAT = "%Y%m%d_%H%M%S_%f"
+DURATION_SUFFIX = "ms"
+STEP_ID_PREFIX = "STEP"
+STEP_RESULT_OK = "OK"
+STEP_RESULT_FAIL = "FAIL"
+STEP_RESULT_START = "START"
+SECRET_MASK = "***"
+SCREENSHOT_PREFIX = "screenshot: "
+MISSING_FIELD = "-"
+PYTEST_CURRENT_TEST_ENV = "PYTEST_CURRENT_TEST"
 SECRET_PARAM_NAMES = frozenset(
     {
         "password",
@@ -39,10 +52,10 @@ F = TypeVar("F", bound=Callable[..., Any])
 class StepFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         timestamp = datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        step = getattr(record, "step", "-")
+        step = getattr(record, "step", MISSING_FIELD)
         action = getattr(record, "action", record.getMessage())
-        result = getattr(record, "step_result", "-")
-        duration = getattr(record, "duration_ms", "-")
+        result = getattr(record, "step_result", MISSING_FIELD)
+        duration = getattr(record, "duration_ms", MISSING_FIELD)
         extra = getattr(record, "step_extra", "")
         line = (
             f"{timestamp} | {record.levelname:<5} | {current_test_name()} | "
@@ -57,7 +70,7 @@ def current_test_name() -> str:
     name = _test_name.get()
     if name:
         return name
-    raw = os.environ.get("PYTEST_CURRENT_TEST", "")
+    raw = os.environ.get(PYTEST_CURRENT_TEST_ENV, "")
     if raw:
         node = raw.split(" ", 1)[0]
         return node.rsplit("::", 1)[-1]
@@ -85,9 +98,9 @@ def configure_logging(
 ) -> Path:
     """Create one log file per run: logs/run_<timestamp>.log."""
     global _configured
-    directory = REPO_ROOT / "logs" if log_dir is None else Path(log_dir)
+    directory = REPO_ROOT / LOG_DIR_NAME if log_dir is None else Path(log_dir)
     directory.mkdir(parents=True, exist_ok=True)
-    log_path = directory / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.log"
+    log_path = directory / f"{LOG_FILE_PREFIX}{datetime.now().strftime(LOG_FILE_STAMP_FORMAT)}.log"
 
     logger = get_logger()
     logger.handlers.clear()
@@ -127,7 +140,7 @@ def step(description: str) -> Callable[[F], F]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             action = _render_action(description, func, args, kwargs)
-            return _run_step(action, lambda: func(*args, **kwargs))
+            return _run_step(action, func, args, kwargs)
 
         return wrapper  # type: ignore[return-value]
 
@@ -140,13 +153,13 @@ def step_scope(description: str) -> Iterator[None]:
     _ensure_configured()
     started = time.perf_counter()
     step_id = _next_step_id()
-    get_logger().debug("", extra=_extra(step_id, description, "START", "-"))
+    get_logger().debug("", extra=_extra(step_id, description, STEP_RESULT_START, MISSING_FIELD))
     try:
         yield
     except Exception as exc:
-        _emit_step(step_id, description, "FAIL", started, error=exc)
+        _emit_step(step_id, description, STEP_RESULT_FAIL, started, error=exc)
         raise
-    _emit_step(step_id, description, "OK", started)
+    _emit_step(step_id, description, STEP_RESULT_OK, started)
 
 
 def _ensure_configured() -> None:
@@ -154,17 +167,17 @@ def _ensure_configured() -> None:
         configure_logging()
 
 
-def _run_step(action: str, callback: Callable[[], Any]) -> Any:
+def _run_step(action: str, func: Callable[..., Any], args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     _ensure_configured()
     started = time.perf_counter()
     step_id = _next_step_id()
-    get_logger().debug("", extra=_extra(step_id, action, "START", "-"))
+    get_logger().debug("", extra=_extra(step_id, action, STEP_RESULT_START, MISSING_FIELD))
     try:
-        result = callback()
+        result = func(*args, **kwargs)
     except Exception as exc:
-        _emit_step(step_id, action, "FAIL", started, error=exc)
+        _emit_step(step_id, action, STEP_RESULT_FAIL, started, error=exc)
         raise
-    _emit_step(step_id, action, "OK", started)
+    _emit_step(step_id, action, STEP_RESULT_OK, started)
     return result
 
 
@@ -176,14 +189,14 @@ def _emit_step(
     *,
     error: BaseException | None = None,
 ) -> None:
-    duration_ms = f"{int((time.perf_counter() - started) * 1000)}ms"
+    duration_ms = f"{int((time.perf_counter() - started) * 1000)}{DURATION_SUFFIX}"
     extras: list[str] = []
     if error is not None:
         extras.append(f"{type(error).__name__}: {error}")
     screenshot = _screenshot_path.get()
-    if result == "FAIL" and screenshot:
-        extras.append(f"screenshot: {screenshot}")
-    level = logging.ERROR if result == "FAIL" else logging.INFO
+    if result == STEP_RESULT_FAIL and screenshot:
+        extras.append(f"{SCREENSHOT_PREFIX}{screenshot}")
+    level = logging.ERROR if result == STEP_RESULT_FAIL else logging.INFO
     get_logger().log(
         level,
         "",
@@ -210,7 +223,7 @@ def _extra(
 def _next_step_id() -> str:
     index = _step_index.get() + 1
     _step_index.set(index)
-    return f"STEP {index}"
+    return f"{STEP_ID_PREFIX} {index}"
 
 
 def _render_action(description: str, func: Callable[..., Any], args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
@@ -219,11 +232,14 @@ def _render_action(description: str, func: Callable[..., Any], args: tuple[Any, 
         bound.apply_defaults()
     except TypeError:
         return description
-    values = {
-        name: "***" if name.lower() in SECRET_PARAM_NAMES else value
-        for name, value in bound.arguments.items()
-        if name != "self"
-    }
+    values = {}
+    for name, value in bound.arguments.items():
+        if name == "self":
+            continue
+        if name.lower() in SECRET_PARAM_NAMES:
+            values[name] = SECRET_MASK
+        else:
+            values[name] = value
     try:
         return description.format(**values)
     except (KeyError, IndexError, ValueError):
