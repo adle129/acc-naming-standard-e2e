@@ -1,0 +1,21 @@
+{
+  "project": {
+    "min_length": 2,
+    "max_length": 6,
+    "unique_length": 4,
+    "charset": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  },
+  "number": {
+    "min_length": 4,
+    "max_length": 6,
+    "unique_length": 4,
+    "charset": "0123456789"
+  },
+  "delimiter": "-",
+  "delimiter_suffix": "1",
+  "forbidden_attribute_chars": "<>:\"/|?*\\",
+  "delimiter_error_text": "The delimiter character can't be used in an attribute value",
+  "forbidden_demo_values": ["test2", "res1", "1234"],
+  "placeholder_unique_project": "${unique_project}",
+  "placeholder_unique_number": "${unique_number}"
+}

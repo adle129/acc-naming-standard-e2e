@@ -1,1 +1,1 @@
-"""Fixtures and hooks. Implemented in T10."""
+"""Fixtures and hooks. Login and screenshot hooks are implemented in T10."""
