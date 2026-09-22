@@ -12,8 +12,8 @@ Tech Stack: Python 3.11+, pytest, pytest-playwright (Sync API ONLY), ruff.
 ## 2. Authentication Protocol (FR-12)
 - **Automated login in the test run (primary)**: a session-scoped fixture in `conftest.py` logs in with credentials from `.env` — the homework requires automating the login step; no manual bootstrap before a run.
 - `utils/setup_auth.py --headed` remains as an interactive fallback for accounts with SSO/MFA challenges; it saves `auth_state.json`, which the fixture may reuse as an optional cache.
-- **Password encryption**: the password in the repo must be a Fernet-encrypted token in `config/credentials.json` (decrypted at runtime by `utils/config.py`); a local `.env` `ACC_PASSWORD` takes precedence. NEVER commit plaintext passwords.
-- NEVER log, print, or commit credentials or `auth_state.json`; `.env` is git-ignored (no plain-text password in the repository).
+- **Password encryption**: the password in the repo must be a Fernet-encrypted token in `config/credentials.json` (decrypted at runtime by `utils/config.py`); a local `.env` `ACC_PASSWORD` takes precedence. The Fernet key is **not** committed — it lives in local `.env` as `ACC_FERNET_KEY` or in git-ignored `config/fernet.key`, and is sent to the reviewer out of band. NEVER commit plaintext passwords or the Fernet key.
+- NEVER log, print, or commit credentials, `auth_state.json`, or `config/fernet.key`; `.env` is git-ignored (no plain-text password or decryption key in the repository).
 
 ## 3. POM Architecture & Locator Strict Rules (FR-01)
 - Hierarchy strictly follows FR-13:

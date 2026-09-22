@@ -1,6 +1,7 @@
 # Secrets and local auth
 .env
 auth_state.json
+config/fernet.key
 
 # Generated artifacts
 reports/**
