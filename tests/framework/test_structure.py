@@ -45,6 +45,8 @@ EXPECTED_PATHS = [
     "utils/setup_auth.py",
     "utils/encrypt_password.py",
     "data/files/a.txt",
+    "data/cases/acceptance.json",
+    "data/rules/naming.json",
     "config/credentials.json",
     "tests/__init__.py",
     "tests/conftest.py",

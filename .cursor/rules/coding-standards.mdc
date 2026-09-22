@@ -9,6 +9,15 @@ alwaysApply: true
 
 Finish the work, run the gate, then **review with the user**. Do not `git commit` or merge until they explicitly ask. See `git-feature-branch.mdc`.
 
+## Data-driven cases
+
+- Business input lives in `data/cases/<suite>.json`. Add a suite by adding a file, not by editing Python.
+- Field rules and delimiter text live in `data/rules/naming.json`.
+- `utils/test_data.py` only knows paths, how to read those files, and how to replace `${unique_project}` / `${unique_number}`.
+- To change ZZ / CA / D, edit the JSON. Do not open a factory method.
+- A product test is a pytest function. It loads data with `load_row("acceptance", "upload_delete_restore")`.
+- Do not add a cases() collector or a case fixture. Pytest already collects tests. `parametrize` waits until a suite has many similar rows (Phase 2 functional).
+
 ## No hardcode
 
 - Do not put URLs, env key names, file names, error text, step labels, timeouts, or sample credentials inline in methods.

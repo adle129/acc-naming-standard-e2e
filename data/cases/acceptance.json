@@ -1,0 +1,22 @@
+{
+  "suite": "acceptance",
+  "cases": [
+    {
+      "id": "upload_delete_restore",
+      "description": "Upload with attributes, delete, then restore with a renamed project and a delimiter check",
+      "upload_file": "data/files/a.txt",
+      "attributes": {
+        "project": "${unique_project}",
+        "volume": "ZZ",
+        "level": "ZZ",
+        "type": "CA",
+        "role": "D",
+        "number": "${unique_number}",
+        "status": "S0",
+        "revision": "dff",
+        "classification": "Ac_05",
+        "custom_fields": "222"
+      }
+    }
+  ]
+}
