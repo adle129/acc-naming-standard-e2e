@@ -22,8 +22,16 @@ def test_required_markers_are_registered(pytestconfig: pytest.Config) -> None:
         pytestconfig: Pytest config fixture that exposes getini('markers').
     """
     # Each markers= line is "name: description"; keep only the name.
-    names = {line.split(":", 1)[0].strip() for line in pytestconfig.getini("markers") if line.strip()}
+    names = set()
+    for line in pytestconfig.getini("markers"):
+        if not line.strip():
+            continue
+        name = line.split(":", 1)[0].strip()
+        names.add(name)
     # Collect unregistered names for a readable failure.
-    missing = [name for name in REQUIRED_MARKERS if name not in names]
+    missing = []
+    for name in REQUIRED_MARKERS:
+        if name not in names:
+            missing.append(name)
     # pytest -m acceptance / -m framework must not warn about unknown marks.
     assert missing == [], f"Unregistered markers: {missing}; found {sorted(names)}"

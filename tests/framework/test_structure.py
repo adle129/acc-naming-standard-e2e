@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.framework.support import ACCEPTANCE_TEST_REL, CANARY_TEST_REL
+
 # Mark every test in this module as a framework self-check, not a product case.
 pytestmark = pytest.mark.framework
 
@@ -60,7 +62,10 @@ EXPECTED_PATHS = [
 def test_fr13_scaffold_paths_exist() -> None:
     """Prove every FR-13 scaffold path is already on disk."""
     # Missing names are easier to fix than a single boolean failure.
-    missing = [rel for rel in EXPECTED_PATHS if not (ROOT / rel).exists()]
+    missing = []
+    for rel in EXPECTED_PATHS:
+        if not (ROOT / rel).exists():
+            missing.append(rel)
     # An empty list means later tasks can edit files in place.
     assert missing == [], f"Missing scaffold paths: {missing}"
 
@@ -68,6 +73,6 @@ def test_fr13_scaffold_paths_exist() -> None:
 def test_product_tests_are_not_present_yet() -> None:
     """Prove Stage 1 has not created product or canary test modules yet."""
     # Acceptance test is Stage 2 / M5; creating it now would violate the skill.
-    assert not (ROOT / "tests/test_acceptance.py").exists()
+    assert not (ROOT / ACCEPTANCE_TEST_REL).exists()
     # Canary is also M5; Layer A lives under tests/framework/ until then.
-    assert not (ROOT / "tests/test_framework_smoke.py").exists()
+    assert not (ROOT / CANARY_TEST_REL).exists()
