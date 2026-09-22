@@ -1,0 +1,30 @@
+---
+description: Each task is developed on a feature branch from master, then merged back after verification
+alwaysApply: true
+---
+
+# Git workflow — feature branch per task
+
+Do **not** implement task work directly on `master`.
+
+## Process
+
+1. Start from the latest `master` (`git checkout master` and update if needed).
+2. Create a feature branch for **this task only**, named `feature/<task>` (example: `feature/t3-logger`).
+3. Develop and commit only on that branch.
+4. Verify before merge: `ruff check .`, `pytest --collect-only`, and `pytest -m framework` (plus any task-specific tests).
+5. After verification passes, merge the feature branch into `master`.
+6. Do not continue the next task on the same feature branch. Open a new branch from the updated `master`.
+
+## Examples
+
+```text
+# ✅ GOOD
+git checkout master
+git checkout -b feature/t3-logger
+# ... implement, test, then merge into master ...
+
+# ❌ BAD
+# implement T3 / T4 / docs changes directly on master
+# reuse feature/t3-logger for the next unrelated task
+```
