@@ -25,6 +25,8 @@ FULL_PAGE_SCREENSHOT = True
 # Step text. Tests import these so they do not copy action wording.
 STEP_NAVIGATE = "navigate to {url}"
 STEP_VERIFY_URL = "verify url {url_pattern}"
+STEP_VERIFY_VISIBLE = "verify visible"
+STEP_VERIFY_HIDDEN = "verify hidden"
 STEP_SCREENSHOT = "screenshot {name}"
 
 
@@ -83,7 +85,25 @@ class BasePage:
         Args:
             url_pattern: Exact URL string, or a compiled regex for query-string pages.
         """
-        expect(self.page).to_have_url(url=url_pattern)
+        expect(self.page).to_have_url(url_pattern)
+
+    @step(STEP_VERIFY_VISIBLE)
+    def verify_visible(self, locator: Any) -> None:
+        """Check that a locator is visible. Page validate_*_page() uses this.
+
+        Args:
+            locator: Playwright locator that identifies this page.
+        """
+        expect(locator).to_be_visible()
+
+    @step(STEP_VERIFY_HIDDEN)
+    def verify_hidden(self, locator: Any) -> None:
+        """Check that a locator is hidden. Used after delete.
+
+        Args:
+            locator: Playwright locator that should no longer be shown.
+        """
+        expect(locator).to_be_hidden()
 
     @step(STEP_SCREENSHOT)
     def take_screenshot(self, name: str | None = None, stamp: str | None = None) -> Path:

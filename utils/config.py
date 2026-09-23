@@ -30,6 +30,7 @@ ENV_FERNET_KEY = "ACC_FERNET_KEY"
 ENV_BROWSER = "BROWSER"
 ENV_HEADLESS = "HEADLESS"
 ENV_TIMEOUT_MS = "TIMEOUT_MS"
+ENV_SHOW_LOGIN = "ACC_SHOW_LOGIN"
 
 ENV_KEYS = (
     ENV_BASE_URL,
@@ -41,6 +42,7 @@ ENV_KEYS = (
     ENV_BROWSER,
     ENV_HEADLESS,
     ENV_TIMEOUT_MS,
+    ENV_SHOW_LOGIN,
 )
 
 # A run cannot start without a target ACC project/folder.
@@ -54,6 +56,8 @@ REQUIRED_ENV_KEYS = (
 DEFAULT_BROWSER = "chromium"
 DEFAULT_TIMEOUT_MS = 30_000
 DEFAULT_HEADLESS = True
+# Reuse auth_state.json so daily upload runs skip the Autodesk ID page.
+DEFAULT_SHOW_LOGIN = False
 
 # ACC Files URL shape used by later page objects.
 FILES_PROJECT_PATH = "/docs/files/projects/"
@@ -100,6 +104,7 @@ class Settings:
     browser: str
     headless: bool
     timeout_ms: int
+    show_login: bool
 
     def files_url(self) -> str:
         """Return the ACC Files URL for the configured project.
@@ -228,6 +233,7 @@ def load_settings(
         browser=browser,
         headless=_as_bool(environ.get(ENV_HEADLESS), default=DEFAULT_HEADLESS),
         timeout_ms=timeout_ms,
+        show_login=_as_bool(environ.get(ENV_SHOW_LOGIN), default=DEFAULT_SHOW_LOGIN),
     )
 
 

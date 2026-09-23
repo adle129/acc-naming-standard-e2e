@@ -9,6 +9,7 @@ import pytest
 from utils.test_data import (
     CASES_DIR,
     NAMING_RULES_PATH,
+    ROW_UPLOAD_DELETE_RESTORE,
     SUITE_ACCEPTANCE,
     CaseData,
     NamingAttributes,
@@ -27,7 +28,7 @@ pytestmark = pytest.mark.framework
 
 # Loader contract values. The row id lives in data/cases/acceptance.json.
 EXPECTED_FIELD_COUNT = 10
-ACCEPTANCE_ROW_ID = "upload_delete_restore"
+ACCEPTANCE_ROW_ID = ROW_UPLOAD_DELETE_RESTORE
 SAMPLE_PREVIEW = "ZZ-ZZ-CA"
 SAMPLE_EXTENSION = ".txt"
 

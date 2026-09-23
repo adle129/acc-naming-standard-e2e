@@ -20,6 +20,8 @@ EXPECTED_PATHS = [
     "pages/project_page.py",
     "pages/files_page.py",
     "pages/deleted_items_page.py",
+    "pages/upload_files_page.py",
+    "pages/restore_files_page.py",
     "dialogs/__init__.py",
     "dialogs/validator_dialog.py",
     "dialogs/upload_validator.py",
@@ -34,6 +36,8 @@ EXPECTED_PATHS = [
     "components/folder_list.py",
     "components/file_toolbar.py",
     "components/file_row.py",
+    "components/file_list.py",
+    "components/validator_item.py",
     "components/row_menu.py",
     "components/toast.py",
     "utils/__init__.py",
@@ -50,6 +54,7 @@ EXPECTED_PATHS = [
     "config/credentials.json",
     "tests/__init__.py",
     "tests/conftest.py",
+    "tests/live_support.py",
     "tests/framework/__init__.py",
     "reports/screenshots",
     "logs",
@@ -57,6 +62,7 @@ EXPECTED_PATHS = [
     ".gitignore",
     "pytest.ini",
     "requirements.txt",
+    "README.md",
     "scripts/verify_framework.py",
 ]
 

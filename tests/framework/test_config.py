@@ -91,6 +91,8 @@ def test_load_settings_prefers_env_password(tmp_path: Path) -> None:
     assert settings.folder_name == SAMPLE_FOLDER_NAME
     assert settings.headless is True
     assert settings.timeout_ms == DEFAULT_TIMEOUT_MS
+    # Daily runs reuse auth_state.json unless ACC_SHOW_LOGIN is set.
+    assert settings.show_login is False
     # pages/ later navigate with this helper; keep the ACC URL shape stable.
     assert settings.files_url() == expected_files_url()
 

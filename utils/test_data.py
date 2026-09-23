@@ -29,6 +29,8 @@ NAMING_RULES_PATH = RULES_DIR / NAMING_RULES_FILE_NAME
 
 # Suite name matches data/cases/<suite>.json. Tests import this, they do not inline it.
 SUITE_ACCEPTANCE = "acceptance"
+# Row id from data/cases/acceptance.json. Tests import this, they do not inline it.
+ROW_UPLOAD_DELETE_RESTORE = "upload_delete_restore"
 
 # Cached rules file so each test does not re-read disk.
 _cached_rules: dict | None = None

@@ -7,8 +7,19 @@ from pathlib import Path
 
 import pytest
 
-from components.folder_list import FOLDER_ROLE, STEP_OPEN_FOLDER
-from pages.files_page import FILES_VIEW_URL_HINT, FILES_VIEW_URL_PATTERN, FilesPage
+from components.folder_list import (
+    FOLDER_ROLE,
+    STEP_OPEN_FOLDER,
+    TREE_GRID_NAME,
+    TREE_GRID_ROLE,
+)
+from pages.files_page import (
+    FILES_VIEW_URL_HINT,
+    FILES_VIEW_URL_PATTERN,
+    FOLDERS_TAB_NAME,
+    TAB_ROLE,
+    FilesPage,
+)
 from tests.framework.support import (
     FILES_PAGE_REL,
     FOLDER_LIST_REL,
@@ -27,14 +38,32 @@ pytestmark = pytest.mark.framework
 
 
 class FakeLocator:
-    """Stand-in Playwright locator. Records click(); never talks to ACC."""
+    """Stand-in Playwright locator. Records click() and nested get_by_role."""
 
     def __init__(self) -> None:
         self.click_count = 0
+        self.role_calls: list[tuple[str, str]] = []
+        self.last_child: FakeLocator | None = None
 
     def click(self) -> None:
         """Record that open_folder asked Playwright to click."""
         self.click_count = self.click_count + 1
+
+    def get_by_role(self, role: str, name: str | None = None, **kwargs: object) -> FakeLocator:
+        """Record a nested role, as FolderList does under the tree grid.
+
+        Args:
+            role: Accessible role requested under this locator.
+            name: Visible name, for example the folder name.
+            **kwargs: Ignored extra Playwright options.
+
+        Returns:
+            A child fake locator.
+        """
+        self.role_calls.append((role, name or ""))
+        child = FakeLocator()
+        self.last_child = child
+        return child
 
 
 class FakePage:
@@ -102,11 +131,11 @@ def test_open_files_navigates_to_the_files_url(tmp_path: Path) -> None:
     assert page.goto_urls == [files_url]
 
 
-def test_verify_files_view_uses_the_folders_url_hint(
+def test_validate_uses_the_folders_url_hint(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Prove Files view checks moduleId=folders through BasePage.verify_url.
+    """Prove FilesPage.validate checks the folders URL and the Folders tab.
 
     Args:
         tmp_path: Isolated root forwarded to BasePage.
@@ -115,33 +144,40 @@ def test_verify_files_view_uses_the_folders_url_hint(
     seen = {}
 
     class FakeAssertion:
-        """Stand-in for Playwright's PageAssertions."""
+        """Stand-in for Playwright assertions used by validate()."""
 
         def to_have_url(self, url: object) -> None:
-            """Record the pattern FilesPage asked to verify.
+            """Record the URL pattern FilesPage asked to verify.
 
             Args:
                 url: The url= argument, expected to be FILES_VIEW_URL_PATTERN.
             """
             seen["url"] = url
 
-    def fake_expect(_page: FakePage) -> FakeAssertion:
+        def to_be_visible(self) -> None:
+            """Record that validate also waited for the Folders tab."""
+            seen["visible"] = True
+
+    def fake_expect(_target: object) -> FakeAssertion:
         """Return the fake assertion instead of a real Playwright expect.
 
         Args:
-            _page: Unused page object.
+            _target: Page or locator handed to expect().
 
         Returns:
-            A recorder for to_have_url.
+            A recorder for to_have_url and to_be_visible.
         """
         return FakeAssertion()
 
     monkeypatch.setattr("pages.base_page.expect", fake_expect)
-    files = FilesPage(FakePage(), root=tmp_path)
-    # Deleted items uses moduleId=deleted; this must stay the folders hint.
-    files.verify_files_view()
+    page = FakePage()
+    files = FilesPage(page, root=tmp_path)
+    # URL alone is not enough; the Folders tab must be on screen too.
+    files.validate_files_page()
     assert seen["url"] == FILES_VIEW_URL_PATTERN
     assert FILES_VIEW_URL_HINT in FILES_VIEW_URL_PATTERN.pattern
+    assert seen["visible"] is True
+    assert (TAB_ROLE, FOLDERS_TAB_NAME) in page.role_calls
 
 
 def test_open_folder_clicks_the_named_folder(tmp_path: Path, _isolated_logger: Path) -> None:
@@ -155,9 +191,11 @@ def test_open_folder_clicks_the_named_folder(tmp_path: Path, _isolated_logger: P
     files = FilesPage(page, root=tmp_path)
     # SAMPLE_FOLDER_NAME matches ACC_FOLDER_NAME / Name-standard in the sample case.
     files.folder_list.open_folder(SAMPLE_FOLDER_NAME)
-    # The role is a named constant so a first-live-run fix does not edit the test.
-    assert page.role_calls == [(FOLDER_ROLE, SAMPLE_FOLDER_NAME)]
-    assert page.last_locator.click_count == 1
+    # The tree is a grid; the folder name is a cell under that grid.
+    assert page.role_calls == [(TREE_GRID_ROLE, TREE_GRID_NAME)]
+    assert page.last_locator.role_calls == [(FOLDER_ROLE, SAMPLE_FOLDER_NAME)]
+    assert page.last_locator.last_child is not None
+    assert page.last_locator.last_child.click_count == 1
     text = read_text(_isolated_logger)
     assert STEP_OPEN_FOLDER.format(name=SAMPLE_FOLDER_NAME) in text
     assert STEP_RESULT_OK in text
@@ -173,8 +211,9 @@ def test_folder_locator_is_exposed_for_expect(tmp_path: Path) -> None:
     files = FilesPage(page, root=tmp_path)
     # Product tests will write expect(files.folder_list.folder(name)).to_be_visible().
     locator = files.folder_list.folder(SAMPLE_FOLDER_NAME)
-    assert locator is page.last_locator
-    assert page.role_calls == [(FOLDER_ROLE, SAMPLE_FOLDER_NAME)]
+    assert locator is page.last_locator.last_child
+    assert page.role_calls == [(TREE_GRID_ROLE, TREE_GRID_NAME)]
+    assert page.last_locator.role_calls == [(FOLDER_ROLE, SAMPLE_FOLDER_NAME)]
 
 
 def test_files_modules_have_no_sleeps() -> None:
