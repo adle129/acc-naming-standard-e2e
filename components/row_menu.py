@@ -1,4 +1,4 @@
-"""Row overflow menu (portal). Phase 2 stub — not used by Phase 1."""
+"""Row overflow menu (portal). Not used by the acceptance path."""
 
 from pages.base_page import BasePage
 

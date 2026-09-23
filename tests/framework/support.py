@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from utils.config import (
     CREDENTIALS_TOKEN_FIELD,
     CREDENTIALS_USERNAME_FIELD,
     DEFAULT_BROWSER,
+    DEFAULT_HEADLESS,
+    DEFAULT_SHOW_LOGIN,
     DEFAULT_TIMEOUT_MS,
     ENV_BASE_URL,
     ENV_BROWSER,
@@ -19,6 +22,7 @@ from utils.config import (
     ENV_TIMEOUT_MS,
     ENV_USERNAME,
     FILES_PROJECT_PATH,
+    Settings,
     credentials_path,
     fernet_key_path,
 )
@@ -43,13 +47,58 @@ SAMPLE_ROUNDTRIP_PASSWORD = "roundtrip-secret"
 SAMPLE_CLI_PASSWORD = "cli-secret"
 SAMPLE_UNUSED_TOKEN = "unused"
 SAMPLE_PROJECT_VALUE = "hw472"
+SAMPLE_ORIGINATOR_VALUE = "XXX"
+SAMPLE_VOLUME_VALUE = "ZZ"
+SAMPLE_LEVEL_VALUE = "ZZ"
 SAMPLE_TYPE_VALUE = "CA"
+SAMPLE_ROLE_VALUE = "D"
+SAMPLE_NUMBER_VALUE = "1234"
+SAMPLE_STATUS_VALUE = "S0"
+SAMPLE_REVISION_VALUE = "dff"
+SAMPLE_CLASSIFICATION_VALUE = "Ac_05"
+SAMPLE_CUSTOM_FIELDS_VALUE = "222"
 SAMPLE_LOGIN_USERNAME = SAMPLE_ENV_USERNAME
 SAMPLE_LOGIN_PASSWORD = "super-secret"
 SAMPLE_BANNER_ERROR = "banner still visible"
 SAMPLE_SCOPE_ERROR = "boom"
 SAMPLE_ACCEPTANCE_TEST_NAME = "test_upload_delete_restore"
 SAMPLE_SCREENSHOT_REL = f"reports/screenshots/{SAMPLE_ACCEPTANCE_TEST_NAME}.png"
+SAMPLE_FILE_NAME = "ZZ-ZZ-CA.txt"
+SAMPLE_UPLOAD_FILE_NAME = "a.txt"
+SAMPLE_COMPOSED_FILE_NAME = "WDR5-XXX-ZZ-ZZ-CA-D-4802.txt"
+SAMPLE_SHOWING_TWO_ITEMS = "Showing 2 items"
+SAMPLE_ITEM_COUNT = 2
+SAMPLE_ASSUME_FAIL_MESSAGE = "soft check failed on purpose"
+SAMPLE_ASSUME_PASS_MESSAGE = "soft check should stay silent"
+SAMPLE_ASSUME_CONTINUED = "later step still ran"
+ASSUME_PROBE_FILE_NAME = "test_assume_probe.py"
+ASSUME_ADDOPTS_EMPTY = "addopts="
+MSG_COUNT_EQUALS_LIST = "item count {count} must equal name list length {length}"
+MSG_ITEM_IN_LIST = "{name} must be in the item list"
+MSG_ATTRIBUTE_VALUE = "{field} expected {expected}, got {actual}"
+STATUS_PROBE_FILE_NAME = "status_probe.txt"
+STATUS_PROBE_PATH = REPO_ROOT / "reports" / STATUS_PROBE_FILE_NAME
+RESTORE_PROBE_FILE_NAME = "restore_probe.txt"
+RESTORE_PROBE_PATH = REPO_ROOT / "reports" / RESTORE_PROBE_FILE_NAME
+PROBE_LIST_TIMEOUT_MS = 5000
+LIST_SETTLE_MS = 15000
+SHOWING_NONEMPTY_PATTERN = re.compile(r"Showing [1-9]")
+PROBE_OPTION_LIMIT = 20
+PROBE_TEXT_LIMIT = 20
+RESTORE_TEXT_HINT = "Restore"
+ACCEPT_TEXT_HINT = "Accept"
+PROBE_RESTORE_NOT_OPENED = "Restore files page not opened"
+PROBE_RESTORE_NOT_VISIBLE = "Restore button not visible after select"
+PROBE_SEEDED_DELETED = "seeded a deleted file with upload then delete"
+MSG_UPLOADED_NAME_MISSING = "uploaded file containing {project} was not on the Files list"
+LISTITEM_ROLE = "listitem"
+ASSUME_PROBE_SOURCE = (
+    "import pytest\n"
+    "\n"
+    "def test_probe_failed_assume_continues():\n"
+    f"    pytest.assume(False, {SAMPLE_ASSUME_FAIL_MESSAGE!r})\n"
+    f"    print({SAMPLE_ASSUME_CONTINUED!r})\n"
+)
 SAMPLE_SCREENSHOT_STAMP = "20260922_120000_000000"
 SAMPLE_SCREENSHOT_BYTES = b"PNG-fake"
 SAMPLE_OPEN_URL = SAMPLE_BASE_URL
@@ -69,12 +118,26 @@ LOGGER_REL_PATH = "utils/logger.py"
 ACCEPTANCE_TEST_REL = "tests/test_acceptance.py"
 CANARY_TEST_REL = "tests/test_framework_smoke.py"
 AUTH_STATE_REL = "auth_state.json"
+PYTEST_INI_REL = "pytest.ini"
 SAMPLE_STORAGE_COOKIES_KEY = "cookies"
 SAMPLE_STORAGE_ORIGINS_KEY = "origins"
 SAMPLE_STORAGE_STATE = {
     SAMPLE_STORAGE_COOKIES_KEY: [],
     SAMPLE_STORAGE_ORIGINS_KEY: [],
 }
+SAMPLE_CONTEXT_IGNORE_HTTPS = True
+SAMPLE_CONTEXT_ARGS = {"ignore_https_errors": SAMPLE_CONTEXT_IGNORE_HTTPS}
+SAMPLE_SETTINGS = Settings(
+    base_url=SAMPLE_BASE_URL,
+    project_id=SAMPLE_PROJECT_ID,
+    folder_name=SAMPLE_FOLDER_NAME,
+    username=SAMPLE_ENV_USERNAME,
+    password=SAMPLE_ENV_PASSWORD,
+    browser=DEFAULT_BROWSER,
+    headless=DEFAULT_HEADLESS,
+    timeout_ms=DEFAULT_TIMEOUT_MS,
+    show_login=DEFAULT_SHOW_LOGIN,
+)
 SAMPLE_INVALID_AUTH_TEXT = "{not-json"
 SAMPLE_AUTH_ARRAY_TEXT = "[]"
 

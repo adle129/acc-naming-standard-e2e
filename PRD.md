@@ -359,7 +359,7 @@ The repository root must contain `README.md` (English) covering:
 1. What the framework is and what it tests.
 2. Prerequisites (Python version, `pip install -r requirements.txt`, `playwright install`).
 3. Configuration — copy `.env.example` to `.env` and fill it; **never commit `.env`**. The reviewer also places the separately provided Fernet key in `ACC_FERNET_KEY` (or `config/fernet.key`).
-4. How to run: default, by suite, by browser, parallel, headed.
+4. How to run: the **first** commands must be the reviewer path (`pip` / `playwright install` → copy `.env` → one headed `pytest -m acceptance`, or `run.ps1` / `run.sh`). Then default, by suite, by browser, parallel. Do not lead with framework-only commands.
 5. Where to find reports, screenshots and logs.
 6. How to regenerate the login state (`auth_state.json`), including the MFA note.
 7. Project structure at a glance.
@@ -425,6 +425,7 @@ This test must stay green. Its failure means the *harness* is broken, not the pr
 
 | Purpose                     | Command                                                 | Phase |
 | --------------------------- | ------------------------------------------------------- | ----- |
+| Reviewer one-shot (M6)      | `run.ps1` (Windows) or `run.sh` (macOS / Linux)         | 1     |
 | Acceptance (default)        | `pytest -m acceptance`                                  | 1     |
 | Acceptance, headed (dev)    | `pytest -m acceptance --headed`                         | 1     |
 | Acceptance, Firefox         | `pytest -m acceptance --browser firefox`                | 1     |
@@ -448,7 +449,7 @@ This test must stay green. Its failure means the *harness* is broken, not the pr
 | M3        | `pages/` + `components/` — base, files, deleted items, login (bootstrap only), toolbar, file row, folder list, toast | Pending |
 | M4        | `dialogs/` — ValidatorDialog base + upload validator / picker / progress, restore validator + restore confirm / restore-items | Pending |
 | M5        | `conftest.py` + FR-15 canary + **`test_upload_delete_restore` (the acceptance test)**   | Pending |
-| M6        | `README.md` + full gate run (ruff, collect-only, canary on Chromium + Firefox, acceptance on Chromium + Firefox) | Pending |
+| M6        | **Last — after M5's product flow exists.** Reviewer README (one command first) + `run.ps1` / `run.sh` + full gate run (ruff, collect-only, canary on Chromium + Firefox, acceptance on Chromium + Firefox). No Docker. | Pending |
 
 ### Phase 2 (deferred backlog)
 

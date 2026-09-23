@@ -159,8 +159,8 @@ acc-naming-standard-e2e/
 | M2 | utils/: config, logger `@step`, test_data, auth + setup_auth | FR-05(min), FR-11, FR-12 |
 | M3 | pages/ + components/ (no row_menu) | FR-01, FR-13 |
 | M4 | dialogs/: ValidatorDialog + upload/restore/progress/restore-items | FR-01 |
-| M5 | conftest + canary + **the one acceptance test** | FR-03, FR-04(markers), FR-10, FR-15, NFR-01…07 |
-| M6 | README + full gate run | FR-14 |
+| M5 | conftest + canary + **the one acceptance test** (login + demo video steps) | FR-03, FR-04(markers), FR-10, FR-15, NFR-01…07 |
+| M6 | **Last.** Do not start until M5's product flow is implemented. Reviewer README (one command first) + `run.ps1` / `run.sh` + full gate run. No Docker. | FR-14, NFR-05 |
 
 ### Phase-2 backlog (explicitly out of this delivery)
 
@@ -204,3 +204,4 @@ acc-naming-standard-e2e/
 2. **Apply the PRD edits** — ✅ done: PRD.md is now v1.2; field-validation-rules.md updated.
 3. **Credentials/account** — ✅ decided: automated login in the test run with `.env` credentials (homework requires login automation); `setup_auth.py` kept as MFA/SSO fallback only.
 4. **Password encryption for GitHub** — ✅ decided: password ships as a Fernet-encrypted token in `config/credentials.json` (decrypted at runtime; local `.env` plaintext override takes precedence). The Fernet key is **not** committed; the reviewer receives it out of band and puts it in `ACC_FERNET_KEY` or `config/fernet.key`.
+5. **Reviewer launch (M6, last)** — ✅ decided: after the acceptance steps exist, rewrite README so the first path is install → `.env` → one headed `pytest -m acceptance`; add `run.ps1` / `run.sh` that wrap that command. Do **not** add Docker (reviewer still needs an ACC account and secrets; headed demo is harder in a container).
