@@ -27,6 +27,7 @@ STEP_SUBMIT_LOGIN = "submit login"
 STEP_CLICK_NEXT = "click Next"
 STEP_WAIT_SIGNED_IN = "wait for Autodesk redirect (complete any on-screen challenge)"
 STEP_LOGIN = "login as {username} password={password}"
+WHAT_USERNAME_BOX = "username box"
 
 
 class LoginPage(BasePage):
@@ -54,7 +55,7 @@ class LoginPage(BasePage):
 
     def validate_login_page(self) -> None:
         """Prove the Autodesk sign-in form is on screen (email field)."""
-        self.verify_visible(self.username_box())
+        self.verify_visible(self.username_box(), WHAT_USERNAME_BOX)
 
     def submit_button(self) -> Locator:
         """Return the Sign in control.

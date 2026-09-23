@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 # Repository root: utils/test_data.py -> utils -> repo.
@@ -62,6 +62,22 @@ class CaseData:
     description: str
     upload_file: Path
     attributes: NamingAttributes
+
+
+def case_attribute_summary(attributes: NamingAttributes) -> str:
+    """Return the ten attribute fields as one log-safe line.
+
+    Args:
+        attributes: Values from load_row(...).attributes.
+
+    Returns:
+        Space-separated field=value pairs. No secrets live on this object.
+    """
+    parts = []
+    values = asdict(attributes)
+    for field in values:
+        parts.append(f"{field}={values[field]}")
+    return " ".join(parts)
 
 
 def naming_rules() -> dict:

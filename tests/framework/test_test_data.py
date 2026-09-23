@@ -13,6 +13,7 @@ from utils.test_data import (
     SUITE_ACCEPTANCE,
     CaseData,
     NamingAttributes,
+    case_attribute_summary,
     case_file,
     delimiter_invalid_project,
     expected_file_name,
@@ -157,3 +158,17 @@ def test_expected_file_name_uses_live_preview() -> None:
     name = expected_file_name(SAMPLE_PREVIEW, SAMPLE_EXTENSION)
     # Upload assertions compare the files-list row to this string.
     assert name == SAMPLE_PREVIEW + SAMPLE_EXTENSION
+
+
+def test_case_attribute_summary_lists_each_field() -> None:
+    """Prove the log summary includes every filled attribute from the row."""
+    # Same helper the acceptance test writes onto the RUN/case line.
+    data = load_row(SUITE_ACCEPTANCE, ACCEPTANCE_ROW_ID)
+    # One line so the reviewer can scan Project and Number without opening JSON.
+    text = case_attribute_summary(data.attributes)
+    # Unique Project must appear; it is what cleanup and the composed name use.
+    assert f"project={data.attributes.project}" in text
+    # Unique Number must appear so the reviewer can match the composed file.
+    assert f"number={data.attributes.number}" in text
+    # A dropdown code from the JSON row proves fixed fields are included too.
+    assert f"volume={data.attributes.volume}" in text

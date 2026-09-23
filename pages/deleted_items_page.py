@@ -25,6 +25,9 @@ FILTER_BUTTON_NAME = "Filter"
 # Query flag that distinguishes Deleted items from the live Files list.
 DELETED_VIEW_URL_HINT = "moduleId=deleted"
 DELETED_VIEW_URL_PATTERN = re.compile(DELETED_VIEW_URL_HINT)
+WHAT_DELETED_BY = DELETED_BY_COLUMN_NAME
+WHAT_DELETED_FILE = "deleted file {name}"
+WHAT_RESTORE_BUTTON = "Restore button"
 
 
 class DeletedItemsPage(BasePage):
@@ -94,7 +97,7 @@ class DeletedItemsPage(BasePage):
     def validate_deleted_items_page(self) -> None:
         """Prove this is the Deleted items UI: deleted URL plus the heading."""
         self.verify_url(DELETED_VIEW_URL_PATTERN)
-        self.verify_visible(self.heading())
+        self.verify_visible(self.heading(), WHAT_DELETED_BY)
 
     def verify_file_visible(self, name: str) -> None:
         """Prove a deleted file row is shown.
@@ -102,7 +105,7 @@ class DeletedItemsPage(BasePage):
         Args:
             name: Visible file name.
         """
-        self.verify_visible(self.row(name).name_cell())
+        self.verify_visible(self.row(name).name_cell(), WHAT_DELETED_FILE.format(name=name))
 
     def verify_file_hidden(self, name: str) -> None:
         """Prove a file row is gone after restore.
@@ -110,7 +113,7 @@ class DeletedItemsPage(BasePage):
         Args:
             name: Visible file name.
         """
-        self.verify_hidden(self.row(name).name_cell())
+        self.verify_hidden(self.row(name).name_cell(), WHAT_DELETED_FILE.format(name=name))
 
     def verify_toast(self, text: str) -> None:
         """Prove a success toast is shown.
@@ -132,12 +135,16 @@ class DeletedItemsPage(BasePage):
         return FileRow(self.page, name, root=self.root)
 
     def select_file(self, name: str) -> None:
-        """Tick the deleted-items row checkbox.
+        """Tick the deleted-items row. Tests call verify_file_selected() after this.
 
         Args:
             name: Visible file name.
         """
         self.row(name).select()
+
+    def verify_file_selected(self) -> None:
+        """Prove a Deleted-items row is selected (Restore is on the action bar)."""
+        self.verify_visible(self.restore_button(), WHAT_RESTORE_BUTTON)
 
     def get_items_count(self) -> int:
         """Return how many files are in the Deleted items list.
@@ -147,6 +154,14 @@ class DeletedItemsPage(BasePage):
         """
         return self.file_list.get_items_count()
 
+    def verify_items_count(self, expected: int) -> None:
+        """Prove the Deleted items count matches this test's file only.
+
+        Args:
+            expected: Showing N items after delete or restore of this file.
+        """
+        self.file_list.verify_items_count(expected)
+
     def get_item_list(self) -> list[str]:
         """Return the file names in the Deleted items list.
 
@@ -154,6 +169,17 @@ class DeletedItemsPage(BasePage):
             Visible file names in list order.
         """
         return self.file_list.get_item_list()
+
+    def file_name_containing(self, token: str) -> str:
+        """Return the Deleted-items name that contains token after delete.
+
+        Args:
+            token: Unique Project from the case row.
+
+        Returns:
+            Visible composed file name.
+        """
+        return self.file_list.name_containing(token)
 
     def click_restore_button(self) -> None:
         """Click Restore on the action bar."""

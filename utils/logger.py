@@ -28,6 +28,22 @@ STEP_RESULT_START = "START"
 SECRET_MASK = "***"
 SCREENSHOT_PREFIX = "screenshot: "
 MISSING_FIELD = "-"
+PHASE_COLUMN = "RUN"
+PHASE_TEST_START = "TEST START {name}"
+PHASE_TEST_END = "TEST END {name}"
+PHASE_TEST_NAME = "TEST NAME {name}"
+PHASE_CONFIG = "config: {details}"
+PHASE_PYTEST = "pytest: headed={headed} slowmo={slowmo} reruns={reruns}"
+PHASE_CASE = "TEST CASE {suite}/{row_id} - {description}"
+NODE_PARAM_OPEN = "["
+PHASE_SESSION_AUTH_REUSE = "session auth: reuse {file}"
+PHASE_SESSION_AUTH_LOGIN = "session auth: login then write {file}"
+PHASE_PREPARE = "prepare: open Files, open folder, sweep leftover generated uploads"
+PHASE_CLEANUP = "cleanup: delete leftover Files-list rows"
+PHASE_CLEANUP_NAMES = "cleanup names: {names}"
+PHASE_CLEANUP_NONE = "none"
+CASE_STEP_COLUMN = "CASE"
+CASE_STEP = "Step {number} - {action}"
 PYTEST_CURRENT_TEST_ENV = "PYTEST_CURRENT_TEST"
 SECRET_PARAM_NAMES = frozenset(
     {
@@ -64,6 +80,20 @@ class StepFormatter(logging.Formatter):
         if extra:
             line = f"{line} | {extra}"
         return line
+
+
+def short_test_name() -> str:
+    """Return the pytest function name without a browser parameter suffix.
+
+    Returns:
+        For example test_upload_delete_restore, not test_upload_delete_restore[chromium].
+    """
+    name = current_test_name()
+    # Playwright parametrization appends [chromium]; the case name stops before that.
+    bracket = name.find(NODE_PARAM_OPEN)
+    if bracket == -1:
+        return name
+    return name[:bracket]
 
 
 def current_test_name() -> str:
@@ -120,6 +150,92 @@ def configure_logging(
 
     _configured = True
     return log_path
+
+
+def log_phase(action: str, *, result: str = MISSING_FIELD) -> None:
+    """Write a lifecycle line that does not consume a STEP number.
+
+    Args:
+        action: What happened, for example TEST START or a config summary.
+        result: START / OK / FAIL, or "-" when the line is informational.
+    """
+    _ensure_configured()
+    # RUN stays in the step column so a reviewer can filter setup from UI steps.
+    get_logger().info("", extra=_extra(PHASE_COLUMN, action, result, MISSING_FIELD))
+
+
+def log_case_step(number: int, action: str) -> None:
+    """Write a sample-case step line before the matching test code.
+
+    Args:
+        number: Sample-case step number, for example 3.
+        action: What this block does. No URL or secret.
+    """
+    _ensure_configured()
+    # CASE is not STEP n, so POM clicks and business steps stay distinct.
+    text = CASE_STEP.format(number=number, action=action)
+    get_logger().info("", extra=_extra(CASE_STEP_COLUMN, text, MISSING_FIELD, MISSING_FIELD))
+
+
+def log_case(*, suite: str, row_id: str, description: str, attributes: str) -> None:
+    """Write which JSON case this test loaded.
+
+    Args:
+        suite: Suite file stem, for example acceptance.
+        row_id: Row id inside that file.
+        description: Case description from the JSON row.
+        attributes: One-line field summary with no secrets.
+    """
+    # Description stays in the action column; field values go in the extra column.
+    action = PHASE_CASE.format(suite=suite, row_id=row_id, description=description)
+    _ensure_configured()
+    get_logger().info("", extra=_extra(PHASE_COLUMN, action, MISSING_FIELD, MISSING_FIELD, attributes))
+
+
+@contextmanager
+def phase_scope(action: str) -> Iterator[None]:
+    """Time a prepare or cleanup block and write START then OK or FAIL.
+
+    Args:
+        action: Lifecycle label, for example PHASE_PREPARE.
+    """
+    _ensure_configured()
+    started = time.perf_counter()
+    # INFO so the console shows prepare/cleanup starting, not only the file.
+    get_logger().info("", extra=_extra(PHASE_COLUMN, action, STEP_RESULT_START, MISSING_FIELD))
+    try:
+        yield
+    except Exception as exc:
+        _emit_phase(action, STEP_RESULT_FAIL, started, error=exc)
+        raise
+    _emit_phase(action, STEP_RESULT_OK, started)
+
+
+def _emit_phase(
+    action: str,
+    result: str,
+    started: float,
+    *,
+    error: BaseException | None = None,
+) -> None:
+    """Write the closing RUN line for a timed prepare or cleanup block.
+
+    Args:
+        action: Same label as the matching START line.
+        result: OK or FAIL.
+        started: perf_counter value from the start of the block.
+        error: Exception to append when the block failed.
+    """
+    duration_ms = f"{int((time.perf_counter() - started) * 1000)}{DURATION_SUFFIX}"
+    extras: list[str] = []
+    if error is not None:
+        extras.append(f"{type(error).__name__}: {error}")
+    level = logging.ERROR if result == STEP_RESULT_FAIL else logging.INFO
+    get_logger().log(
+        level,
+        "",
+        extra=_extra(PHASE_COLUMN, action, result, duration_ms, " | ".join(extras)),
+    )
 
 
 def reset_logging() -> None:

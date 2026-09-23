@@ -12,6 +12,9 @@ from dialogs.validator_dialog import STEP_CANCEL_VALIDATOR
 from tests.framework.support import (
     SAMPLE_ACCEPTANCE_TEST_NAME,
     SAMPLE_COMPOSED_FILE_NAME,
+    SAMPLE_DEMO_RES1_FILE_NAME,
+    SAMPLE_GENERATED_PROJECT,
+    SAMPLE_KEEP_MANUAL_FILE_NAME,
     SAMPLE_SETTINGS,
     read_text,
 )
@@ -86,6 +89,37 @@ def test_live_acc_remembers_only_this_test_upload() -> None:
     # Cleanup deletes only names this test recorded, not names[0] on the folder.
     acc.remember_upload(SAMPLE_COMPOSED_FILE_NAME)
     assert acc.uploaded_names == [SAMPLE_COMPOSED_FILE_NAME]
+
+
+def test_live_acc_remembers_project_before_composed_name() -> None:
+    """Prove remember_project is enough for cleanup when name capture fails.
+
+    Args:
+        None.
+    """
+    page = FakePage()
+    acc = LiveAcc(page, SAMPLE_SETTINGS)
+    # Acceptance records Project as soon as the case row is loaded.
+    acc.remember_project(SAMPLE_GENERATED_PROJECT)
+    assert acc.uploaded_projects == [SAMPLE_GENERATED_PROJECT]
+    # The composed name contains that Project, so cleanup can still select it.
+    assert acc._should_delete_name(SAMPLE_COMPOSED_FILE_NAME) is True
+
+
+def test_generated_leftover_is_deleted_demo_file_is_kept() -> None:
+    """Prove leftover unique-Project files are cleaned; demo rows stay.
+
+    Args:
+        None.
+    """
+    page = FakePage()
+    acc = LiveAcc(page, SAMPLE_SETTINGS)
+    # Failed runs leave AB12-XXX-ZZ-ZZ-CA-D-3402.txt on the shared folder.
+    assert acc._is_generated_upload(SAMPLE_COMPOSED_FILE_NAME) is True
+    # res1 is a forbidden demo Project and must not be swept.
+    assert acc._is_generated_upload(SAMPLE_DEMO_RES1_FILE_NAME) is False
+    # Manual test-... names do not use this suite's composed marker.
+    assert acc._is_generated_upload(SAMPLE_KEEP_MANUAL_FILE_NAME) is False
 
 
 def test_cleanup_skips_delete_when_no_upload_was_recorded() -> None:

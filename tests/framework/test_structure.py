@@ -78,9 +78,13 @@ def test_fr13_scaffold_paths_exist() -> None:
     assert missing == [], f"Missing scaffold paths: {missing}"
 
 
-def test_product_tests_are_not_present_yet() -> None:
-    """Prove Stage 1 has not created product or canary test modules yet."""
-    # Acceptance test is Stage 2 / M5; creating it now would violate the skill.
-    assert not (ROOT / ACCEPTANCE_TEST_REL).exists()
-    # Canary is also M5; Layer A lives under tests/framework/ until then.
+def test_acceptance_module_exists() -> None:
+    """Prove P0 added the interviewer acceptance test module."""
+    # Reviewers run tests/test_acceptance.py; the path must stay in FR-13.
+    assert (ROOT / ACCEPTANCE_TEST_REL).exists()
+
+
+def test_canary_module_is_not_present_yet() -> None:
+    """Prove the FR-15 canary was not added during P0."""
+    # Canary stays out of this delivery; Layer A lives under tests/framework/.
     assert not (ROOT / CANARY_TEST_REL).exists()

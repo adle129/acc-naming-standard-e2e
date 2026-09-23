@@ -33,6 +33,7 @@ CLASSIFICATION_HEADER = "Classification *"
 # The listed name includes the composed preview, so match a.txt as a substring.
 FILE_NAME_EXACT = False
 FIRST_ROW_INDEX = 0
+TAB_KEY = "Tab"
 
 # Live ACC exposes text fields by their format-mask accessible names.
 PROJECT_BOX_NAME = "XXXXXX"
@@ -227,6 +228,8 @@ class ValidatorItem(BasePage):
             value: Project attribute, usually from NamingAttributes.project.
         """
         self.project_box().fill(value)
+        # ACC validates Project after blur; Tab moves to the next field.
+        self.project_box().press(TAB_KEY)
 
     @step(STEP_SELECT_ORIGINATOR)
     def set_originator(self, value: str) -> None:

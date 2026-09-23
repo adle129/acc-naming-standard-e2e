@@ -5,8 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from components.app_nav import AppNav
+from components.app_nav import FILES_NAV_NAME, AppNav
 from pages.base_page import BasePage
+
+WHAT_FILES_NAV = FILES_NAV_NAME
 
 
 class ProjectPage(BasePage):
@@ -32,7 +34,7 @@ class ProjectPage(BasePage):
 
     def validate_project_page(self) -> None:
         """Prove the current page is the project hub (Files nav is present)."""
-        self.verify_visible(self.app_nav.files_link())
+        self.verify_visible(self.app_nav.files_link(), WHAT_FILES_NAV)
 
     def click_files(self) -> None:
         """Click Files in the project nav."""

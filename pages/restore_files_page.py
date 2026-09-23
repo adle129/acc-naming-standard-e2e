@@ -18,6 +18,8 @@ RESTORE_FILES_HEADING = "awaiting validation before it is restored"
 FILE_NAME_EXACT = False
 ACCEPT_BUTTON_NAME = "Accept"
 STEP_ACCEPT_PREVIOUS = "accept previous-version values"
+WHAT_RESTORE_FILES_HEADING = "Restore files heading"
+WHAT_AWAITING_RESTORE_FILE = "awaiting restore file {name}"
 
 
 class RestoreFilesPage(ValidatorDialog):
@@ -57,7 +59,7 @@ class RestoreFilesPage(ValidatorDialog):
     def validate_restore_files_page(self) -> None:
         """Prove Restore files is open on the Deleted items URL."""
         self.verify_url(DELETED_VIEW_URL_PATTERN)
-        self.verify_visible(self.heading())
+        self.verify_visible(self.heading(), WHAT_RESTORE_FILES_HEADING)
 
     def get_items_count(self) -> int:
         """Return how many files are awaiting restore.
@@ -81,7 +83,10 @@ class RestoreFilesPage(ValidatorDialog):
         Args:
             name: Visible or local file name.
         """
-        self.verify_visible(self.file_name(name))
+        self.verify_visible(
+            self.file_name(name),
+            WHAT_AWAITING_RESTORE_FILE.format(name=name),
+        )
 
     def select_item(self, name: str) -> None:
         """Tick the file-row checkbox.

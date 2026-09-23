@@ -14,6 +14,7 @@ FOLDER_ROLE = "gridcell"
 
 # Step text. Tests import this so they do not copy action wording.
 STEP_OPEN_FOLDER = "open folder {name}"
+WHAT_FOLDER = "folder {name}"
 
 
 class FolderList(BasePage):
@@ -37,7 +38,7 @@ class FolderList(BasePage):
         Args:
             name: Visible folder name, for example ACC_FOLDER_NAME.
         """
-        self.verify_visible(self.folder(name))
+        self.verify_visible(self.folder(name), WHAT_FOLDER.format(name=name))
 
     @step(STEP_OPEN_FOLDER)
     def open_folder(self, name: str) -> None:

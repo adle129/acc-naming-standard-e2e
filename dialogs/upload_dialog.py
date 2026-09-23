@@ -19,6 +19,7 @@ DONE_BUTTON_NAME = "Done"
 CLOSE_IMAGE_NAME = "x"
 STEP_SELECT_FILES = "click Select files"
 STEP_CLOSE_UPLOAD = "close Upload picker"
+WHAT_SELECT_FILES = SELECT_FILES_BUTTON_NAME
 
 
 class UploadDialog(BasePage):
@@ -26,7 +27,7 @@ class UploadDialog(BasePage):
 
     def validate_upload_dialog(self) -> None:
         """Prove the upload picker is open (Select files is visible)."""
-        self.verify_visible(self.select_files_button())
+        self.verify_visible(self.select_files_button(), WHAT_SELECT_FILES)
 
     def heading(self) -> Locator:
         """Return the Upload banner on the picker dialog.

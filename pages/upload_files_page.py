@@ -18,6 +18,8 @@ UPLOAD_FILES_HEADING = "Upload files"
 FILE_NAME_EXACT = False
 ADD_FILES_BUTTON_NAME = "Add files"
 STEP_ADD_FILES = "click Add files"
+WHAT_UPLOAD_FILES_HEADING = UPLOAD_FILES_HEADING
+WHAT_AWAITING_FILE = "awaiting file {name}"
 
 
 class UploadFilesPage(ValidatorDialog):
@@ -57,7 +59,7 @@ class UploadFilesPage(ValidatorDialog):
     def validate_upload_files_page(self) -> None:
         """Prove Upload files is open on the Files folder URL."""
         self.verify_url(FILES_VIEW_URL_PATTERN)
-        self.verify_visible(self.heading())
+        self.verify_visible(self.heading(), WHAT_UPLOAD_FILES_HEADING)
 
     def validate_upload_validator(self) -> None:
         """Same as validate_upload_files_page(); kept for existing tests."""
@@ -85,7 +87,7 @@ class UploadFilesPage(ValidatorDialog):
         Args:
             name: Local file name, for example a.txt.
         """
-        self.verify_visible(self.file_name(name))
+        self.verify_visible(self.file_name(name), WHAT_AWAITING_FILE.format(name=name))
 
     def item_row(self, name: str) -> Locator:
         """Return the list row that contains this file name.

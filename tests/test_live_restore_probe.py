@@ -82,6 +82,8 @@ def test_live_restore_files_structure(live_acc: LiveAcc) -> None:
 
     # First deleted row is enough to reach the attribute table.
     deleted.select_file(names[0])
+    # Restore is page state after select; the action itself does not assert.
+    deleted.verify_file_selected()
     restore_count = deleted.restore_button().count()
     lines.append(f"Restore button count after select={restore_count}")
     _append_button_texts(page, lines)
@@ -156,6 +158,7 @@ def _seed_deleted_file(
     deleted.click_files()
     files.validate_files_page()
     files.click_folder(live_acc.settings.folder_name)
+    files.verify_folder_opened()
     files.click_upload_button()
     upload = UploadDialog(page)
     upload.validate_upload_dialog()
@@ -207,6 +210,7 @@ def _delete_and_reopen_deleted(
         Deleted-item names after the delete.
     """
     files.select_file(name)
+    files.verify_file_selected()
     files.click_delete_button()
     delete = DeleteDialog(files.page)
     delete.validate_delete_dialog()
