@@ -13,6 +13,7 @@ from tests.framework.support import (
     FORBIDDEN_WAIT,
     LOGGER_REL_PATH,
     REPO_ROOT,
+    SAMPLE_ACCEPTANCE_NODE_CHROMIUM,
     SAMPLE_ACCEPTANCE_TEST_NAME,
     SAMPLE_BANNER_ERROR,
     SAMPLE_LOGIN_PASSWORD,
@@ -29,16 +30,28 @@ from tests.framework.support import (
     STEP_PICK_TYPE,
     read_text,
 )
+from utils.test_data import ROW_UPLOAD_DELETE_RESTORE, SUITE_ACCEPTANCE
 from utils.logger import (
+    CASE_STEP,
+    CASE_STEP_COLUMN,
     DURATION_SUFFIX,
+    PHASE_CASE,
+    PHASE_COLUMN,
+    PHASE_TEST_END,
+    PHASE_TEST_START,
     SECRET_MASK,
     STEP_RESULT_FAIL,
     STEP_RESULT_OK,
     STEP_RESULT_START,
     configure_logging,
+    log_case,
+    log_case_step,
+    log_phase,
+    phase_scope,
     reset_logging,
     set_screenshot_path,
     set_test_name,
+    short_test_name,
     step,
     step_scope,
 )
@@ -228,6 +241,111 @@ def test_file_handler_keeps_debug_start_lines(_isolated_logger: Path) -> None:
     assert STEP_RESULT_START in text
     # Argument formatting still applies on the start/OK action text.
     assert STEP_PICK_TYPE.format(value=SAMPLE_TYPE_VALUE) in text
+
+
+def test_log_phase_writes_run_column_without_a_step_number(
+    _isolated_logger: Path,
+) -> None:
+    """Prove TEST START / TEST END use RUN, not STEP 1.
+
+    Args:
+        _isolated_logger: Run log path created by the autouse fixture.
+    """
+    # START marks the beginning of the product test body and names the function.
+    start_line = PHASE_TEST_START.format(name=SAMPLE_ACCEPTANCE_TEST_NAME)
+    log_phase(start_line, result=STEP_RESULT_START)
+    # END is written from the live_acc fixture after cleanup.
+    end_line = PHASE_TEST_END.format(name=SAMPLE_ACCEPTANCE_TEST_NAME)
+    log_phase(end_line, result=STEP_RESULT_OK)
+    # File handler includes both lines for the reviewer.
+    text = read_text(_isolated_logger)
+    # Lifecycle lines stay in the RUN column so UI steps keep STEP n.
+    assert PHASE_COLUMN in text
+    # The start label must include the pytest test name.
+    assert start_line in text
+    # The end label must include the same name with OK.
+    assert end_line in text
+    # A phase line must not consume the first UI step number.
+    assert FIRST_STEP_LABEL not in text
+
+
+def test_short_test_name_strips_browser_parameter() -> None:
+    """Prove TEST NAME drops the Playwright [chromium] suffix."""
+    # Pytest-playwright appends the browser to PYTEST_CURRENT_TEST.
+    set_test_name(SAMPLE_ACCEPTANCE_NODE_CHROMIUM)
+    # Reviewers search for the function name, not the node id.
+    assert short_test_name() == SAMPLE_ACCEPTANCE_TEST_NAME
+
+
+def test_log_case_step_writes_sample_step_number(_isolated_logger: Path) -> None:
+    """Prove a business step line uses CASE and Step N - action.
+
+    Args:
+        _isolated_logger: Run log path created by the autouse fixture.
+    """
+    # Sample step 3 is the first action the reviewer looks for after prepare.
+    log_case_step(3, STEP_CLICK_UPLOAD)
+    # Read the file so we assert the formatted line, not stdout.
+    text = read_text(_isolated_logger)
+    # CASE keeps this line apart from POM STEP 3 click Upload.
+    assert CASE_STEP_COLUMN in text
+    # The reviewer searches for this exact Step N wording.
+    assert CASE_STEP.format(number=3, action=STEP_CLICK_UPLOAD) in text
+
+
+def test_log_case_writes_suite_row_and_fields(_isolated_logger: Path) -> None:
+    """Prove the case line names the JSON row and the filled attributes.
+
+    Args:
+        _isolated_logger: Run log path created by the autouse fixture.
+    """
+    # Description text comes from the JSON row; keep it in one constant here.
+    description = STEP_OPEN_FILES
+    # Field summary is built by case_attribute_summary in product tests.
+    attributes = STEP_FILL_PROJECT.format(value=SAMPLE_PROJECT_VALUE)
+    # Same helper the acceptance test calls after load_row.
+    log_case(
+        suite=SUITE_ACCEPTANCE,
+        row_id=ROW_UPLOAD_DELETE_RESTORE,
+        description=description,
+        attributes=attributes,
+    )
+    # Read the file so we assert the formatted action, not stdout.
+    text = read_text(_isolated_logger)
+    # Suite and row id must appear so the reviewer knows which JSON case ran.
+    expected = PHASE_CASE.format(
+        suite=SUITE_ACCEPTANCE,
+        row_id=ROW_UPLOAD_DELETE_RESTORE,
+        description=description,
+    )
+    assert expected in text
+    # Attribute values stay on the extra column of the same line.
+    assert attributes in text
+
+
+def test_phase_scope_logs_ok_and_fail(_isolated_logger: Path) -> None:
+    """Prove prepare/cleanup timing writes START then OK, or FAIL.
+
+    Args:
+        _isolated_logger: Run log path created by the autouse fixture.
+    """
+    # Empty prepare is enough to emit START and OK.
+    with phase_scope(STEP_OPEN_FILES):
+        pass
+    # A failing cleanup must still surface after it is logged.
+    with pytest.raises(RuntimeError, match=SAMPLE_SCOPE_ERROR):
+        with phase_scope(STEP_CLICK_UPLOAD):
+            raise RuntimeError(SAMPLE_SCOPE_ERROR)
+    # Both scopes share the isolated log file.
+    text = read_text(_isolated_logger)
+    # Successful prepare uses the RUN column.
+    assert PHASE_COLUMN in text
+    # START is INFO for lifecycle so the console shows prepare beginning.
+    assert STEP_RESULT_START in text
+    # The failing action text is required for diagnosis.
+    assert STEP_CLICK_UPLOAD in text
+    # Exception text is required so the log replaces a rerun.
+    assert f"RuntimeError: {SAMPLE_SCOPE_ERROR}" in text
 
 
 def test_logger_module_has_no_sleeps() -> None:

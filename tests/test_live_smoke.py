@@ -10,6 +10,18 @@ from __future__ import annotations
 import pytest
 
 from dialogs.upload_dialog import UploadDialog
+from dialogs.validator_dialog import (
+    WHAT_ADD_FILES,
+    WHAT_CANCEL_VALIDATOR,
+    WHAT_CLOSE_VALIDATOR,
+    WHAT_EDIT_ALL,
+    WHAT_ERROR_BANNER,
+    WHAT_ERRORS_ONLY,
+    WHAT_PREVIOUS_VERSION_LABEL,
+    WHAT_PREVIOUS_VERSION_SWITCH,
+    WHAT_REMOVE_ALL,
+    WHAT_UPLOAD_BUTTON,
+)
 from components.validator_item import (
     FIELD_CLASSIFICATION,
     FIELD_CUSTOM_FIELDS,
@@ -24,7 +36,7 @@ from components.validator_item import (
     FIELD_VOLUME,
     value_has_code,
 )
-from pages.deleted_items_page import DeletedItemsPage
+from pages.deleted_items_page import WHAT_DELETED_BY, DeletedItemsPage
 from pages.upload_files_page import UploadFilesPage
 from tests.live_support import LiveAcc
 from tests.framework.support import (
@@ -88,16 +100,22 @@ def test_live_open_files_and_click_upload(live_acc: LiveAcc) -> None:
     )
     item = upload_files.item(SAMPLE_UPLOAD_FILE_NAME)
     # Page chrome: do not click Remove / Upload / Add files (those change the run).
-    upload_files.verify_visible(upload_files.edit_all_button())
-    upload_files.verify_visible(upload_files.remove_all_button())
-    upload_files.verify_visible(upload_files.add_files_button())
-    upload_files.verify_visible(upload_files.errors_only_checkbox())
-    upload_files.verify_visible(upload_files.error_banner())
-    upload_files.verify_visible(upload_files.previous_version_label())
-    upload_files.verify_visible(upload_files.previous_version_switch())
-    upload_files.verify_visible(upload_files.close_button())
-    upload_files.verify_visible(upload_files.cancel_button())
-    upload_files.verify_visible(upload_files.upload_button())
+    upload_files.verify_visible(upload_files.edit_all_button(), WHAT_EDIT_ALL)
+    upload_files.verify_visible(upload_files.remove_all_button(), WHAT_REMOVE_ALL)
+    upload_files.verify_visible(upload_files.add_files_button(), WHAT_ADD_FILES)
+    upload_files.verify_visible(upload_files.errors_only_checkbox(), WHAT_ERRORS_ONLY)
+    upload_files.verify_visible(upload_files.error_banner(), WHAT_ERROR_BANNER)
+    upload_files.verify_visible(
+        upload_files.previous_version_label(),
+        WHAT_PREVIOUS_VERSION_LABEL,
+    )
+    upload_files.verify_visible(
+        upload_files.previous_version_switch(),
+        WHAT_PREVIOUS_VERSION_SWITCH,
+    )
+    upload_files.verify_visible(upload_files.close_button(), WHAT_CLOSE_VALIDATOR)
+    upload_files.verify_visible(upload_files.cancel_button(), WHAT_CANCEL_VALIDATOR)
+    upload_files.verify_visible(upload_files.upload_button(), WHAT_UPLOAD_BUTTON)
     # a.txt has errors, so the filter keeps it listed.
     upload_files.check_errors_only()
     upload_files.verify_errors_only_checked()
@@ -156,7 +174,7 @@ def test_live_open_files_and_click_upload(live_acc: LiveAcc) -> None:
     deleted = DeletedItemsPage(page)
     deleted.validate_deleted_items_page()
     # Deleted by is unique to this view; Files list does not show it.
-    deleted.verify_visible(deleted.deleted_by_column())
+    deleted.verify_visible(deleted.deleted_by_column(), WHAT_DELETED_BY)
     # Soft check: Deleted items count/list can fail without skipping the return to Files.
     deleted_count = deleted.get_items_count()
     # Names are read separately so the message can show both sides.

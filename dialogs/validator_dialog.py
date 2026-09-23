@@ -30,6 +30,20 @@ REMOVE_ALL_BUTTON_NAME = re.compile(r"^Remove( all| \(\d+\))$")
 ERRORS_ONLY_CHECKBOX_NAME = "Only show files with errors"
 PREVIOUS_VERSION_LABEL = "Show attribute values from previous version"
 ERROR_BANNER_HINT = "doesn't comply"
+# Live restore banners name the delimiter as "special characters".
+SPECIAL_CHARACTERS_HINT = "special characters"
+WHAT_ERROR_TEXT = "error text {text}"
+WHAT_ERROR_BANNER = "delimiter error banner"
+WHAT_SPECIAL_CHARACTERS = SPECIAL_CHARACTERS_HINT
+WHAT_EDIT_ALL = "Edit all"
+WHAT_REMOVE_ALL = "Remove all"
+WHAT_ADD_FILES = "Add files"
+WHAT_ERRORS_ONLY = ERRORS_ONLY_CHECKBOX_NAME
+WHAT_PREVIOUS_VERSION_LABEL = PREVIOUS_VERSION_LABEL
+WHAT_PREVIOUS_VERSION_SWITCH = "previous-version switch"
+WHAT_CLOSE_VALIDATOR = "validator close"
+WHAT_CANCEL_VALIDATOR = CANCEL_BUTTON_NAME
+WHAT_UPLOAD_BUTTON = UPLOAD_BUTTON_NAME
 
 STEP_VALIDATOR_UPLOAD = "click Upload button"
 STEP_VALIDATOR_RESTORE = "click Restore button"
@@ -115,6 +129,45 @@ class ValidatorDialog(BasePage):
             Playwright locator.
         """
         return self.page.get_by_text(ERROR_BANNER_HINT)
+
+    def error_text(self, text: str) -> Locator:
+        """Return the exact validator error string from the rules file.
+
+        Args:
+            text: Exact UI error, for example naming_rules delimiter_error_text.
+
+        Returns:
+            Playwright locator.
+        """
+        return self.page.get_by_text(text, exact=True)
+
+    def verify_error_text(self, text: str) -> None:
+        """Prove the exact validator error is shown.
+
+        Args:
+            text: Exact UI error, for example naming_rules delimiter_error_text.
+        """
+        self.verify_visible(self.error_text(text), WHAT_ERROR_TEXT.format(text=text))
+
+    def verify_error_text_hidden(self, text: str) -> None:
+        """Prove the exact validator error is gone.
+
+        Args:
+            text: Exact UI error, for example naming_rules delimiter_error_text.
+        """
+        self.verify_hidden(self.error_text(text), WHAT_ERROR_TEXT.format(text=text))
+
+    def verify_delimiter_error_visible(self) -> None:
+        """Prove the restore banner reports a special-character / delimiter error."""
+        self.verify_visible(self.error_banner(), WHAT_ERROR_BANNER)
+        self.verify_visible(
+            self.page.get_by_text(SPECIAL_CHARACTERS_HINT),
+            WHAT_SPECIAL_CHARACTERS,
+        )
+
+    def verify_delimiter_error_hidden(self) -> None:
+        """Prove the compliance banner is gone after the delimiter is removed."""
+        self.verify_hidden(self.error_banner(), WHAT_ERROR_BANNER)
 
     def item(self, name: str) -> ValidatorItem:
         """Return the table row for one listed file.

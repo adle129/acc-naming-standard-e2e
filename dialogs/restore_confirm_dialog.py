@@ -14,6 +14,7 @@ CANCEL_BUTTON_NAME = "Cancel"
 EXACT_BUTTON_NAME = True
 STEP_CONFIRM_RESTORE = "click Restore in dialog"
 STEP_CANCEL_RESTORE = "click Cancel in restore dialog"
+WHAT_RESTORE_CONFIRM = RESTORE_BUTTON_NAME
 
 
 class RestoreConfirmDialog(BasePage):
@@ -41,7 +42,7 @@ class RestoreConfirmDialog(BasePage):
 
     def validate_restore_confirm_dialog(self) -> None:
         """Prove the first restore confirmation is open."""
-        self.verify_visible(self.restore_button())
+        self.verify_visible(self.restore_button(), WHAT_RESTORE_CONFIRM)
 
     @step(STEP_CONFIRM_RESTORE)
     def click_restore_button(self) -> None:

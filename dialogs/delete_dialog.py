@@ -13,6 +13,7 @@ CANCEL_BUTTON_NAME = "Cancel"
 EXACT_BUTTON_NAME = True
 STEP_CONFIRM_DELETE = "click Delete in dialog"
 STEP_CANCEL_DELETE = "click Cancel in delete dialog"
+WHAT_DELETE_CONFIRM = DELETE_BUTTON_NAME
 
 
 class DeleteDialog(BasePage):
@@ -38,7 +39,7 @@ class DeleteDialog(BasePage):
 
     def validate_delete_dialog(self) -> None:
         """Prove the delete confirmation is open."""
-        self.verify_visible(self.delete_button())
+        self.verify_visible(self.delete_button(), WHAT_DELETE_CONFIRM)
 
     @step(STEP_CONFIRM_DELETE)
     def click_delete_button(self) -> None:

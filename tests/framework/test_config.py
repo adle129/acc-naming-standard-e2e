@@ -19,7 +19,9 @@ from tests.framework.support import (
     SAMPLE_FOLDER_NAME,
     SAMPLE_HIDDEN_PASSWORD,
     SAMPLE_IGNORED_USERNAME,
+    SAMPLE_PROJECT_ID,
     SAMPLE_ROUNDTRIP_PASSWORD,
+    SAMPLE_SETTINGS,
     SAMPLE_TOKEN_PASSWORD,
     SAMPLE_UNUSED_TOKEN,
     expected_files_url,
@@ -43,6 +45,7 @@ from utils.config import (
     fernet_key_path,
     generate_fernet_key,
     load_settings,
+    safe_settings_summary,
 )
 from utils.encrypt_password import main as encrypt_main
 
@@ -215,6 +218,21 @@ def test_settings_repr_hides_password(tmp_path: Path) -> None:
     # The password field itself is omitted from repr (field(repr=False)).
     assert f"{CREDENTIALS_TOKEN_FIELD}=" not in rendered
     assert "password=" not in rendered
+
+
+def test_safe_settings_summary_omits_password() -> None:
+    """Prove the run-config log line names folder and user, never the password."""
+    # SAMPLE_SETTINGS is the same shape live_acc logs at TEST START.
+    text = safe_settings_summary(SAMPLE_SETTINGS)
+    # Folder and project id are what a reviewer needs to know the target.
+    assert SAMPLE_FOLDER_NAME in text
+    assert SAMPLE_PROJECT_ID in text
+    # Username is not a secret; it already appears on the login step.
+    assert SAMPLE_ENV_USERNAME in text
+    # The plaintext password must never appear in a log line.
+    assert SAMPLE_ENV_PASSWORD not in text
+    # A field named password= would also leak the secret if it were added.
+    assert "password=" not in text
 
 
 def test_encrypt_decrypt_roundtrip() -> None:

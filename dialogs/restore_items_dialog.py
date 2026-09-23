@@ -10,6 +10,7 @@ from utils.logger import step
 BUTTON_ROLE = "button"
 CONTINUE_BUTTON_NAME = "Continue"
 STEP_CONTINUE = "click Continue"
+WHAT_CONTINUE = CONTINUE_BUTTON_NAME
 
 
 class RestoreItemsDialog(BasePage):
@@ -25,7 +26,7 @@ class RestoreItemsDialog(BasePage):
 
     def validate_restore_items_dialog(self) -> None:
         """Prove the Restore items dialog is open."""
-        self.verify_visible(self.continue_button())
+        self.verify_visible(self.continue_button(), WHAT_CONTINUE)
 
     @step(STEP_CONTINUE)
     def click_continue_button(self) -> None:

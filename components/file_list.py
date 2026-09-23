@@ -16,6 +16,12 @@ SHOWING_ITEMS_PREFIX = "Showing "
 SHOWING_ITEMS_PATTERN = re.compile(r"Showing (\d+) items?")
 COUNT_GROUP = 1
 EMPTY_CELL = ""
+# One upload, delete, or restore changes the list by this many rows.
+ITEM_COUNT_DELTA_ONE = 1
+# Unique Project is the prefix of the composed Files-list name after upload.
+MSG_NAME_TOKEN_MISSING = "no file name containing {token}"
+MSG_ITEMS_COUNT = "item count expected {expected}, got {actual}"
+WHAT_NAME_CONTAINING = "file name containing {token}"
 
 
 class FileList(BasePage):
@@ -40,6 +46,40 @@ class FileList(BasePage):
         if match is None:
             return 0
         return int(match.group(COUNT_GROUP))
+
+    def verify_items_count(self, expected: int) -> None:
+        """Prove Showing N items matches the count this test expects.
+
+        Args:
+            expected: Count after upload, delete, or restore of this test's file.
+        """
+        actual = self.get_items_count()
+        assert actual == expected, MSG_ITEMS_COUNT.format(
+            expected=expected, actual=actual
+        )
+
+    def name_containing(self, token: str) -> str:
+        """Wait until a list row shows token, then return that file name.
+
+        Args:
+            token: Unique Project (or other substring) from the case row.
+
+        Returns:
+            The visible composed file name that contains token.
+
+        Raises:
+            AssertionError: The list loaded but no name contained token.
+        """
+        # Scope to the Name table so a leftover upload modal is not a second match.
+        self.verify_visible(
+            self._name_table().get_by_text(token),
+            WHAT_NAME_CONTAINING.format(token=token),
+        )
+        listed = self.get_item_list()
+        for name in listed:
+            if token in name:
+                return name
+        raise AssertionError(MSG_NAME_TOKEN_MISSING.format(token=token))
 
     def get_item_list(self) -> list[str]:
         """Return the visible file names in list order.

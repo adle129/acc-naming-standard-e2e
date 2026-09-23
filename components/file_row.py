@@ -35,12 +35,14 @@ class FileRow(BasePage):
         self.name = name
 
     def row(self) -> Locator:
-        """Return the row that shows this file name.
+        """Return the Name-table row that shows this file name.
 
         Returns:
             Playwright locator for the whole row.
         """
-        return self.page.get_by_role(FILE_ROW_ROLE, name=self.name)
+        # The drop-zone and the virtualized grid both expose a row with this name.
+        name_cell = self.page.get_by_text(self.name, exact=True)
+        return FileList(self.page, root=self.root)._item_rows().filter(has=name_cell)
 
     def checkbox(self) -> Locator:
         """Return the row checkbox used by the toolbar path.
@@ -75,9 +77,13 @@ class FileRow(BasePage):
 
     @step(STEP_SELECT_FILE)
     def select(self) -> None:
-        """Tick the row checkbox so Delete or Restore appears on the toolbar."""
+        """Tick the selection checkbox so Delete or Restore appears on the toolbar."""
         try:
-            self.checkbox().click(timeout=SPLIT_CHECKBOX_TIMEOUT_MS)
-        except PlaywrightTimeoutError:
-            # Deleted items keeps checkboxes in a separate table from the Name column.
-            self._split_checkbox().click()
+            # The Name table can expose a non-selecting checkbox; the split column is the real one.
+            self._split_checkbox().click(timeout=SPLIT_CHECKBOX_TIMEOUT_MS)
+        except (PlaywrightTimeoutError, ValueError):
+            try:
+                self.checkbox().click(timeout=SPLIT_CHECKBOX_TIMEOUT_MS)
+            except PlaywrightTimeoutError:
+                # Some ACC grids select from the Name cell when no checkbox is hit.
+                self.row().click()

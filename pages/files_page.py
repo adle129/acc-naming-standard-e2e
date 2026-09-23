@@ -9,7 +9,7 @@ from typing import Any
 from components.app_nav import AppNav
 from components.file_list import FileList
 from components.file_row import FileRow
-from components.file_toolbar import FileToolbar
+from components.file_toolbar import MOVE_BUTTON_NAME, UPLOAD_BUTTON_NAME, FileToolbar
 from components.folder_list import FolderList
 from components.toast import Toast
 from pages.base_page import BasePage
@@ -20,6 +20,10 @@ FILES_VIEW_URL_PATTERN = re.compile(FILES_VIEW_URL_HINT)
 # Folders tab is visible on the Files list before a folder is opened.
 TAB_ROLE = "tab"
 FOLDERS_TAB_NAME = "Folders"
+WHAT_FOLDERS_TAB = FOLDERS_TAB_NAME
+WHAT_FILE = "file {name}"
+WHAT_UPLOAD_BUTTON = UPLOAD_BUTTON_NAME
+WHAT_MOVE_BUTTON = MOVE_BUTTON_NAME
 
 
 class FilesPage(BasePage):
@@ -93,7 +97,7 @@ class FilesPage(BasePage):
     def validate_files_page(self) -> None:
         """Prove this is the Files UI: folders URL plus the Folders tab."""
         self.verify_url(FILES_VIEW_URL_PATTERN)
-        self.verify_visible(self.folders_tab())
+        self.verify_visible(self.folders_tab(), WHAT_FOLDERS_TAB)
 
     def verify_folder_visible(self, name: str) -> None:
         """Prove the named folder is shown. Shared by every Files test.
@@ -109,7 +113,7 @@ class FilesPage(BasePage):
         Args:
             name: Visible file name from expected_file_name().
         """
-        self.verify_visible(self.row(name).name_cell())
+        self.verify_visible(self.row(name).name_cell(), WHAT_FILE.format(name=name))
 
     def verify_file_hidden(self, name: str) -> None:
         """Prove a file row is gone after delete.
@@ -117,17 +121,19 @@ class FilesPage(BasePage):
         Args:
             name: Visible file name from expected_file_name().
         """
-        self.verify_hidden(self.row(name).name_cell())
+        self.verify_hidden(self.row(name).name_cell(), WHAT_FILE.format(name=name))
 
     def click_folder(self, name: str) -> None:
-        """Open a folder and wait until its file list (and Upload) are ready.
+        """Open a folder. Tests call verify_folder_opened() after this.
 
         Args:
             name: Visible folder name, for example ACC_FOLDER_NAME.
         """
         self.folder_list.open_folder(name)
-        # Upload is not on the project-root bar; it appears after this folder's files load.
-        self.verify_visible(self.toolbar.upload_button())
+
+    def verify_folder_opened(self) -> None:
+        """Prove Upload is on the bar after this folder's files loaded."""
+        self.verify_visible(self.toolbar.upload_button(), WHAT_UPLOAD_BUTTON)
 
     def click_upload_button(self) -> None:
         """Click Upload on the action bar."""
@@ -142,12 +148,16 @@ class FilesPage(BasePage):
         self.toolbar.open_deleted_items()
 
     def select_file(self, name: str) -> None:
-        """Tick the row checkbox.
+        """Tick the row checkbox. Tests call verify_file_selected() after this.
 
         Args:
             name: Visible file name.
         """
         self.row(name).select()
+
+    def verify_file_selected(self) -> None:
+        """Prove a Files-list row is selected (Move is on the action bar)."""
+        self.verify_visible(self.toolbar.move_button(), WHAT_MOVE_BUTTON)
 
     def get_items_count(self) -> int:
         """Return how many files are in the current folder list.
@@ -157,6 +167,14 @@ class FilesPage(BasePage):
         """
         return self.file_list.get_items_count()
 
+    def verify_items_count(self, expected: int) -> None:
+        """Prove the Files list count matches this test's file only.
+
+        Args:
+            expected: Showing N items after upload, delete, or restore.
+        """
+        self.file_list.verify_items_count(expected)
+
     def get_item_list(self) -> list[str]:
         """Return the file names in the current folder list.
 
@@ -164,6 +182,17 @@ class FilesPage(BasePage):
             Visible file names in list order.
         """
         return self.file_list.get_item_list()
+
+    def file_name_containing(self, token: str) -> str:
+        """Return the Files-list name that contains token after upload or restore.
+
+        Args:
+            token: Unique Project from the case row.
+
+        Returns:
+            Visible composed file name.
+        """
+        return self.file_list.name_containing(token)
 
     def verify_toast(self, text: str) -> None:
         """Prove a success toast is shown.

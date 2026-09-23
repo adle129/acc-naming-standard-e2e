@@ -9,7 +9,7 @@ import pytest
 
 from components.file_list import GRIDCELL_ROLE, NAME_HEADER, SHOWING_ITEMS_PREFIX, TABLE_ROLE
 from components.app_nav import FILES_NAV_NAME, NAV_LINK_ROLE, STEP_OPEN_FILES_NAV
-from components.file_row import CHECKBOX_ROLE, FILE_ROW_ROLE, STEP_SELECT_FILE
+from components.file_row import STEP_SELECT_FILE
 from components.file_toolbar import (
     BUTTON_ROLE,
     DELETED_ITEMS_BUTTON_NAME,
@@ -30,6 +30,7 @@ from pages.login_page import (
     PASSWORD_INPUT_SELECTOR,
     STEP_LOGIN,
     SUBMIT_BUTTON_SELECTOR,
+    WHAT_USERNAME_BOX,
     LoginPage,
 )
 from pages.project_page import ProjectPage
@@ -265,6 +266,17 @@ class FakeLocator:
 
         Args:
             **kwargs: Ignored Playwright filter options such as has=.
+
+        Returns:
+            This locator.
+        """
+        return self
+
+    def or_(self, _other: FakeLocator) -> FakeLocator:
+        """Playwright Locator.or_. The fake has one match, so return self.
+
+        Args:
+            _other: Unused alternate locator.
 
         Returns:
             This locator.
@@ -540,7 +552,7 @@ def test_login_validate_checks_the_email_field(
     assert page.locator_calls == [EMAIL_INPUT_SELECTOR]
     assert seen["visible"] is True
     text = read_text(_isolated_logger)
-    assert STEP_VERIFY_VISIBLE in text
+    assert STEP_VERIFY_VISIBLE.format(what=WHAT_USERNAME_BOX) in text
 
 
 def test_project_page_opens_files_from_nav(tmp_path: Path, _isolated_logger: Path) -> None:
@@ -612,12 +624,10 @@ def test_files_toolbar_and_row_and_toast(tmp_path: Path, _isolated_logger: Path)
     assert page.role_calls[-1] == (BUTTON_ROLE, UPLOAD_BUTTON_NAME)
     row = files.row(SAMPLE_FILE_NAME)
     row.select()
-    # select() finds the row by name, then the checkbox under that row locator.
-    assert page.role_calls[-1] == (FILE_ROW_ROLE, SAMPLE_FILE_NAME)
-    assert page.last_locator.last_child is not None
-    assert CHECKBOX_ROLE in page.last_locator.child_roles
+    # select() finds the row by the visible file name on the Name table.
+    assert SAMPLE_FILE_NAME in page.text_calls
     toast = files.toast.message(TOAST_UPLOADED)
-    assert page.text_calls == [TOAST_UPLOADED]
+    assert TOAST_UPLOADED in page.text_calls
     assert toast is page.last_locator
     text = read_text(_isolated_logger)
     assert STEP_UPLOAD in text
@@ -830,6 +840,8 @@ def test_files_page_reads_item_count(tmp_path: Path) -> None:
     page.inner_text_value = SAMPLE_SHOWING_TWO_ITEMS
     files = FilesPage(page, root=tmp_path)
     assert files.get_items_count() == SAMPLE_ITEM_COUNT
+    # Acceptance uses the same label to prove one upload changed Showing N.
+    files.verify_items_count(SAMPLE_ITEM_COUNT)
     assert page.text_calls[-1] == SHOWING_ITEMS_PREFIX
 
 
@@ -843,6 +855,8 @@ def test_deleted_items_page_reads_item_count(tmp_path: Path) -> None:
     page.inner_text_value = SAMPLE_SHOWING_TWO_ITEMS
     deleted = DeletedItemsPage(page, root=tmp_path)
     assert deleted.get_items_count() == SAMPLE_ITEM_COUNT
+    # Restore checks this count dropped by one for this test's file only.
+    deleted.verify_items_count(SAMPLE_ITEM_COUNT)
     assert page.text_calls[-1] == SHOWING_ITEMS_PREFIX
 
 

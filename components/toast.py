@@ -10,6 +10,7 @@ from pages.base_page import BasePage
 TOAST_UPLOADED = "1 file has been successfully uploaded"
 TOAST_DELETED = "1 file was deleted"
 TOAST_RESTORED = "1 file successfully restored"
+WHAT_TOAST = "toast {text}"
 
 
 class Toast(BasePage):
@@ -32,4 +33,4 @@ class Toast(BasePage):
         Args:
             text: Exact toast string, usually TOAST_UPLOADED / TOAST_DELETED / TOAST_RESTORED.
         """
-        self.verify_visible(self.message(text))
+        self.verify_visible(self.message(text), WHAT_TOAST.format(text=text))

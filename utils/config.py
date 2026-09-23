@@ -116,6 +116,27 @@ class Settings:
         return f"{self.base_url.rstrip('/')}{FILES_PROJECT_PATH}{self.project_id}"
 
 
+def safe_settings_summary(settings: Settings) -> str:
+    """Return config text that is safe to write to a log file.
+
+    Args:
+        settings: Resolved runtime settings.
+
+    Returns:
+        One line of non-secret fields. Password and keys are omitted.
+    """
+    parts = []
+    parts.append(f"base_url={settings.base_url}")
+    parts.append(f"project_id={settings.project_id}")
+    parts.append(f"folder_name={settings.folder_name}")
+    parts.append(f"username={settings.username}")
+    parts.append(f"browser={settings.browser}")
+    parts.append(f"headless={settings.headless}")
+    parts.append(f"timeout_ms={settings.timeout_ms}")
+    parts.append(f"show_login={settings.show_login}")
+    return " ".join(parts)
+
+
 _CACHED_SETTINGS: Settings | None = None
 
 
