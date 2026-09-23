@@ -73,6 +73,11 @@ MSG_MISSING_PASSWORD = (
     "Missing password. Set ACC_PASSWORD in .env, or provide "
     "config/credentials.json password_token plus a local Fernet key."
 )
+MSG_OWN_ACCOUNT_NEEDS_PASSWORD = (
+    "ACC_USERNAME is set to your own account but ACC_PASSWORD is empty. "
+    "Set both to use your Autodesk login, or leave ACC_USERNAME empty "
+    "and provide the Fernet key to use the homework account."
+)
 MSG_MISSING_FERNET_KEY = (
     "Missing Fernet key. Set ACC_FERNET_KEY in .env or create config/fernet.key. "
     "The reviewer receives this key separately; it is not in the repository."
@@ -225,11 +230,20 @@ def load_settings(
 
     # Username may come from .env or from the committed credentials file.
     credentials = _load_credentials(credentials_path(root))
-    username = _clean(environ.get(ENV_USERNAME))
+    env_username = _clean(environ.get(ENV_USERNAME))
+    credentials_username = _clean(credentials.get(CREDENTIALS_USERNAME_FIELD))
+    username = env_username
     if not username:
-        username = _clean(credentials.get(CREDENTIALS_USERNAME_FIELD))
+        username = credentials_username
     if not username:
         raise ConfigError(MSG_MISSING_USERNAME)
+
+    # Own-account username without a password must not use the homework token.
+    env_password = environ.get(ENV_PASSWORD)
+    has_env_password = env_password is not None and env_password != ""
+    if env_username and not has_env_password:
+        if env_username != credentials_username:
+            raise ConfigError(MSG_OWN_ACCOUNT_NEEDS_PASSWORD)
 
     # Password resolution is isolated so the error never includes the secret.
     password = _resolve_password(environ, credentials, root)

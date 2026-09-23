@@ -36,8 +36,10 @@ from utils.config import (
     ENV_FERNET_KEY,
     ENV_KEYS,
     ENV_PROJECT_ID,
+    ENV_USERNAME,
     MSG_DECRYPT_FAILED,
     MSG_MISSING_FERNET_KEY,
+    MSG_OWN_ACCOUNT_NEEDS_PASSWORD,
     ConfigError,
     credentials_path,
     decrypt_password_token,
@@ -158,6 +160,25 @@ def test_missing_required_setting_fails_fast(tmp_path: Path) -> None:
     # The message names the missing key so the reviewer knows what to set.
     with pytest.raises(ConfigError, match=ENV_PROJECT_ID):
         # Isolated root still needed so credentials lookup stays sandboxed.
+        load_settings(environ=environ, root=tmp_path)
+
+
+def test_own_username_without_password_fails_fast(tmp_path: Path) -> None:
+    """Prove a reviewer username cannot silently use the homework password token.
+
+    Args:
+        tmp_path: Pytest temp directory used as an isolated project root.
+    """
+    # Homework token exists so a missing check would decrypt it and mix identities.
+    key = generate_fernet_key()
+    token = encrypt_password_token(SAMPLE_HIDDEN_PASSWORD, key)
+    write_credentials(tmp_path, username=SAMPLE_CREDENTIALS_USERNAME, password_token=token)
+    # Reviewer set only their email; password stays empty like .env.example.
+    environ = required_env()
+    environ[ENV_USERNAME] = SAMPLE_ENV_USERNAME
+    environ[ENV_FERNET_KEY] = key
+    # The message tells them to set ACC_PASSWORD or clear ACC_USERNAME.
+    with pytest.raises(ConfigError, match=re.escape(MSG_OWN_ACCOUNT_NEEDS_PASSWORD)):
         load_settings(environ=environ, root=tmp_path)
 
 
