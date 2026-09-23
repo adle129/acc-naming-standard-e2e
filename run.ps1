@@ -12,15 +12,28 @@ Set-Location $PSScriptRoot
 
 # Usage lives in one place so the error and the comment stay aligned.
 $Usage = "Usage: .\run.ps1 [[-Username] user] [[-Password] pass]"
-$MsgNeedBoth = "Pass both username and password, or pass neither for the homework account."
+$MsgNeedUsername = "Pass a username, or pass neither argument for the homework account."
+$MsgNeedPassword = "Password is empty. Type it at the prompt, or pass it in single quotes."
+$PasswordPrompt = "Password"
 
 # Optional reviewer login. Project id and folder stay in .env.
+# Username only: prompt so !, &, and ( do not break the shell.
 $HasUsername = -not [string]::IsNullOrWhiteSpace($Username)
 $HasPassword = -not [string]::IsNullOrWhiteSpace($Password)
-if ($HasUsername -or $HasPassword) {
-    if (-not $HasUsername -or -not $HasPassword) {
-        Write-Error "$Usage`n$MsgNeedBoth"
-        exit 1
+if ($HasPassword -and -not $HasUsername) {
+    Write-Error "$Usage`n$MsgNeedUsername"
+    exit 1
+}
+if ($HasUsername) {
+    if (-not $HasPassword) {
+        $Secure = Read-Host -Prompt $PasswordPrompt -AsSecureString
+        $Bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Secure)
+        $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($Bstr)
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Bstr)
+        if ([string]::IsNullOrWhiteSpace($Password)) {
+            Write-Error $MsgNeedPassword
+            exit 1
+        }
     }
     $env:ACC_USERNAME = $Username
     $env:ACC_PASSWORD = $Password

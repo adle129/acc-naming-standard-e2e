@@ -19,20 +19,22 @@ On Windows use `python` instead of `python3` if that is what `py --version` show
 3. Copy `.env.example` to `.env`. Project id and folder are already set. **Never commit `.env`.**
 4. Choose one login path and run the headed acceptance command.
 
-**Option 1 (recommended): your Autodesk account.** Pass username and password only. Do not change `ACC_PROJECT_ID` or `ACC_FOLDER_NAME`. Autodesk may send a code to *your* inbox and may show a picture challenge.
+**Option 1 (recommended): your Autodesk account.** Pass the username only. The script asks for the password so `!` `&` `(` in zsh or PowerShell are not treated as shell syntax. Do not change `ACC_PROJECT_ID` or `ACC_FOLDER_NAME`. Autodesk may send a code to *your* inbox and may show a picture challenge.
 
 **Windows:**
 
 ```text
-.\run.ps1 you@company.com your-password
+.\run.ps1 you@company.com
 ```
 
 **macOS or Linux:**
 
 ```text
 chmod +x run.sh
-./run.sh you@company.com your-password
+./run.sh you@company.com
 ```
+
+If you pass the password on the command line, wrap it in single quotes: `./run.sh you@company.com 'p@ss!word'`.
 
 If you already tried the homework account, delete `auth_state.json` first so the run does not reuse that session.
 
@@ -55,7 +57,7 @@ Option 2 (no login arguments) is the same as:
 python3 -m pytest tests/test_acceptance.py -m acceptance --headed --slowmo 500 --reruns 0
 ```
 
-Option 1 sets `ACC_USERNAME` and `ACC_PASSWORD` from the two arguments, then runs that pytest command. On Windows: `python -m pytest ...` (same flags). `run.sh` already picks `python3` on macOS.
+Option 1 sets `ACC_USERNAME` from the username argument and `ACC_PASSWORD` from the prompt (or a quoted second argument), then runs that pytest command. On Windows: `python -m pytest ...` (same flags). `run.sh` already picks `python3` on macOS.
 
 `pytest.ini` already defaults to `--headed`. Watch the Chromium window. The first run opens Autodesk ID. Finish the email code and any picture challenge in that window (about five minutes). Later runs reuse git-ignored `auth_state.json` when `ACC_SHOW_LOGIN=false`.
 
@@ -141,7 +143,7 @@ pytest -m acceptance --browser firefox
 
 ## Login
 
-Login is a session fixture (`tests/conftest.py` + `LoginPage`). Tests do not type credentials. The reviewer picks one of two paths (see above): Option 1 passes username and password to `run.sh` / `run.ps1`; Option 2 decrypts `config/credentials.json` with the Fernet key. Project id and folder stay in `.env`.
+Login is a session fixture (`tests/conftest.py` + `LoginPage`). Tests do not type credentials. The reviewer picks one of two paths (see above): Option 1 passes the username to `run.sh` / `run.ps1` (password is prompted); Option 2 decrypts `config/credentials.json` with the Fernet key. Project id and folder stay in `.env`.
 
 | `ACC_SHOW_LOGIN` | What happens |
 | --- | --- |
