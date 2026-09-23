@@ -6,13 +6,15 @@ This is a POM test framework, not a page of raw locators. Tests call page and di
 
 ## Reviewer: run this first
 
-1. Python 3.11 or newer.
+1. Python 3.11 or newer. On macOS the command is `python3` (there is no `python` unless you add one).
 2. Install dependencies:
 
 ```text
-pip install -r requirements.txt
-playwright install chromium
+python3 -m pip install -r requirements.txt
+python3 -m playwright install chromium
 ```
+
+On Windows use `python` instead of `python3` if that is what `py --version` shows.
 
 3. Copy `.env.example` to `.env` and fill `ACC_PROJECT_ID`, `ACC_FOLDER_NAME`, and username. Put the Fernet key you received out of band in `ACC_FERNET_KEY` or git-ignored `config/fernet.key`. **Never commit `.env`.**
 4. Run the headed acceptance path (one command). **Windows** uses PowerShell:
@@ -35,8 +37,10 @@ Both scripts add `--slowmo 500` so each click pauses 500 ms and the reviewer can
 That is the same as:
 
 ```text
-pytest tests/test_acceptance.py -m acceptance --headed --slowmo 500 --reruns 0
+python3 -m pytest tests/test_acceptance.py -m acceptance --headed --slowmo 500 --reruns 0
 ```
+
+On Windows: `python -m pytest ...` (same flags). `run.sh` already picks `python3` on macOS.
 
 `pytest.ini` already defaults to `--headed`. Watch the Chromium window. The first run may open Autodesk ID; finish any picture challenge once. Later runs reuse git-ignored `auth_state.json` when `ACC_SHOW_LOGIN=false`.
 
