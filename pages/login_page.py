@@ -19,7 +19,8 @@ SIGNIN_HOST = "signin.autodesk.com"
 # Short wait: stay-signed-in is optional and must not block a fast redirect.
 STAY_SIGNED_IN_TIMEOUT_MS = 10000
 # Arkose / email verify stays on signin; a headed run must finish it by hand.
-CHALLENGE_TIMEOUT_MS = 180000
+# Five minutes so a reviewer can open their own inbox and type the code.
+CHALLENGE_TIMEOUT_MS = 300000
 
 STEP_FILL_USERNAME = "fill username {username}"
 STEP_FILL_PASSWORD = "fill password {password}"

@@ -3,6 +3,24 @@
 # Headed + slowmo so the reviewer can watch each click.
 set -euo pipefail
 cd "$(dirname "$0")"
+
+# Usage lives in one place so the error and the comment stay aligned.
+USAGE="Usage: ./run.sh [username password]"
+MSG_NEED_BOTH="Pass both username and password, or pass neither for the homework account."
+MSG_NEED_PYTHON="Python 3.11 or newer is required. On macOS: python3 -m pip install -r requirements.txt"
+
+# Optional reviewer login. Project id and folder stay in .env.
+if [ "$#" -eq 0 ]; then
+  :
+elif [ "$#" -eq 2 ]; then
+  export ACC_USERNAME="$1"
+  export ACC_PASSWORD="$2"
+else
+  echo "${USAGE}" >&2
+  echo "${MSG_NEED_BOTH}" >&2
+  exit 1
+fi
+
 # macOS has python3, not python. Prefer a local venv when the reviewer created one.
 if [ -x ".venv/bin/python" ]; then
   PYTHON=".venv/bin/python"
@@ -11,7 +29,7 @@ elif command -v python3 >/dev/null 2>&1; then
 elif command -v python >/dev/null 2>&1; then
   PYTHON="python"
 else
-  echo "Python 3.11 or newer is required. On macOS: python3 -m pip install -r requirements.txt" >&2
+  echo "${MSG_NEED_PYTHON}" >&2
   exit 1
 fi
 # 500 ms between Playwright actions; omit --slowmo for a faster local rerun.

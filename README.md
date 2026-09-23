@@ -16,33 +16,48 @@ python3 -m playwright install chromium
 
 On Windows use `python` instead of `python3` if that is what `py --version` shows.
 
-3. Copy `.env.example` to `.env` and fill `ACC_PROJECT_ID`, `ACC_FOLDER_NAME`, and username. Put the Fernet key you received out of band in `ACC_FERNET_KEY` or git-ignored `config/fernet.key`. **Never commit `.env`.**
-4. Run the headed acceptance path (one command). **Windows** uses PowerShell:
+3. Copy `.env.example` to `.env`. Project id and folder are already set. **Never commit `.env`.**
+4. Choose one login path and run the headed acceptance command.
+
+**Option 1 (recommended): your Autodesk account.** Pass username and password only. Do not change `ACC_PROJECT_ID` or `ACC_FOLDER_NAME`. Autodesk may send a code to *your* inbox and may show a picture challenge.
+
+**Windows:**
 
 ```text
-.\run.ps1
+.\run.ps1 you@company.com your-password
 ```
 
-**macOS or Linux** uses the shell script (not `run.ps1`):
+**macOS or Linux:**
 
 ```text
 chmod +x run.sh
+./run.sh you@company.com your-password
+```
+
+If you already tried the homework account, delete `auth_state.json` first so the run does not reuse that session.
+
+**Option 2: homework demo account.** Put the Fernet key you received out of band in `ACC_FERNET_KEY` or git-ignored `config/fernet.key`. Then run with no login arguments:
+
+```text
+.\run.ps1
 ./run.sh
 ```
 
-`run.ps1` is for Windows PowerShell only. `run.sh` is for macOS and Linux. Both run the same pytest command. Do not use `.\run.ps1` on a Mac unless you have installed PowerShell 7 (`pwsh`) on purpose.
+Autodesk will email a code to the homework inbox and may show a picture challenge. Use this path only if you can open that inbox.
+
+`run.ps1` is for Windows PowerShell only. `run.sh` is for macOS and Linux. Do not use `.\run.ps1` on a Mac unless you have installed PowerShell 7 (`pwsh`) on purpose.
 
 Both scripts add `--slowmo 500` so each click pauses 500 ms and the reviewer can follow the flow (about two to three minutes). A plain `pytest -m acceptance` without the script stays fast.
 
-That is the same as:
+Option 2 (no login arguments) is the same as:
 
 ```text
 python3 -m pytest tests/test_acceptance.py -m acceptance --headed --slowmo 500 --reruns 0
 ```
 
-On Windows: `python -m pytest ...` (same flags). `run.sh` already picks `python3` on macOS.
+Option 1 sets `ACC_USERNAME` and `ACC_PASSWORD` from the two arguments, then runs that pytest command. On Windows: `python -m pytest ...` (same flags). `run.sh` already picks `python3` on macOS.
 
-`pytest.ini` already defaults to `--headed`. Watch the Chromium window. The first run may open Autodesk ID; finish any picture challenge once. Later runs reuse git-ignored `auth_state.json` when `ACC_SHOW_LOGIN=false`.
+`pytest.ini` already defaults to `--headed`. Watch the Chromium window. The first run opens Autodesk ID. Finish the email code and any picture challenge in that window (about five minutes). Later runs reuse git-ignored `auth_state.json` when `ACC_SHOW_LOGIN=false`.
 
 After the run, open the newest file under `logs/` and search `CASE` for sample steps 1–21, or `TEST NAME` / `TEST CASE` for the pytest function and JSON row.
 
@@ -126,7 +141,7 @@ pytest -m acceptance --browser firefox
 
 ## Login
 
-Login is a session fixture (`tests/conftest.py` + `LoginPage`). Tests do not type credentials.
+Login is a session fixture (`tests/conftest.py` + `LoginPage`). Tests do not type credentials. The reviewer picks one of two paths (see above): Option 1 passes username and password to `run.sh` / `run.ps1`; Option 2 decrypts `config/credentials.json` with the Fernet key. Project id and folder stay in `.env`.
 
 | `ACC_SHOW_LOGIN` | What happens |
 | --- | --- |
@@ -136,12 +151,12 @@ Login is a session fixture (`tests/conftest.py` + `LoginPage`). Tests do not typ
 If automated login cannot finish (SSO / MFA / Arkose), run:
 
 ```text
-python utils/setup_auth.py --headed
+python3 utils/setup_auth.py --headed
 ```
 
-Complete sign-in in the window, then press Enter. Keep `ACC_SHOW_LOGIN=false` afterwards.
+On Windows: `python utils/setup_auth.py --headed`. Complete sign-in in the window (email code goes to the account you configured), then press Enter. Keep `ACC_SHOW_LOGIN=false` afterwards.
 
-The framework does not solve Autodesk picture challenges. That is account protection, not a missing test step.
+The framework does not solve Autodesk picture challenges or email codes. That is account protection, not a missing test step.
 
 ## Reports and logs
 
