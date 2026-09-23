@@ -63,6 +63,9 @@ EXPECTED_PATHS = [
     "pytest.ini",
     "requirements.txt",
     "README.md",
+    # Interviewer one-command wrappers from P2 / M6.
+    "run.ps1",
+    "run.sh",
     "scripts/verify_framework.py",
 ]
 

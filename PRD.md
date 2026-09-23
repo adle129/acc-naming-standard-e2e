@@ -448,8 +448,8 @@ This test must stay green. Its failure means the *harness* is broken, not the pr
 | M2        | `utils/` — config, logger (`@step`), test_data, auth + `setup_auth.py` (interactive SSO) | Pending |
 | M3        | `pages/` + `components/` — base, files, deleted items, login (bootstrap only), toolbar, file row, folder list, toast | Pending |
 | M4        | `dialogs/` — ValidatorDialog base + upload validator / picker / progress, restore validator + restore confirm / restore-items | Pending |
-| M5        | `conftest.py` + FR-15 canary + **`test_upload_delete_restore` (the acceptance test)**   | Pending |
-| M6        | **Last — after M5's product flow exists.** Reviewer README (one command first) + `run.ps1` / `run.sh` + full gate run (ruff, collect-only, canary on Chromium + Firefox, acceptance on Chromium + Firefox). No Docker. | Pending |
+| M5        | `test_upload_delete_restore`: login (reuse session) + upload → delete → restore on live ACC, including delimiter steps 18–19. | Done |
+| M6        | Reviewer README (one command first) + `run.ps1` / `run.sh`. No Docker. | Done |
 
 ### Phase 2 (deferred backlog)
 
