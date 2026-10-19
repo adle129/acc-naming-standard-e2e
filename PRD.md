@@ -7,7 +7,7 @@
 | **Date**              | 2026-09-22                                                                           |
 | **Status**            | Draft for review                                                                     |
 | **System under test** | Autodesk Construction Cloud (ACC) — **Files** tool, **File Naming Standard** feature |
-| **Target project**    | `xxxx` (`xxxx`)                         |
+| **Target project**    | `xxxx` (`xxxx`)                                                                      |
 | **Tech stack**        | Python 3.11+ · Playwright (pytest-playwright) · pytest                               |
 
 ---
@@ -200,7 +200,7 @@ All environment-dependent values are externalised — never hardcoded.
 | Setting            | Source                         | Example                                |
 | ------------------ | ------------------------------ | -------------------------------------- |
 | Base URL           | `.env`                         | `https://acc.autodesk.com`             |
-| Project ID         | `.env`                         | `xxxx` |
+| Project ID         | `.env`                         | `xxxx`                                 |
 | Folder name        | `.env`                         | `Name-standard` (the enforced folder)  |
 | Username           | `.env`                         | —                                      |
 | Password           | `.env`                         | —                                      |
