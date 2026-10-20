@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACC Files Tool — Web UI Test Case Design</title>
+<style>
+  :root { --blue:#1F4E79; --acc:#E2EFDA; --func:#DDEBF7; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+         color:#222; margin:0; background:#f6f8fa; }
+  header { background:var(--blue); color:#fff; padding:24px 32px; }
+  header h1 { margin:0 0 6px; font-size:22px; }
+  header p { margin:2px 0; font-size:13px; opacity:.92; }
+  main { max-width:1200px; margin:0 auto; padding:24px 20px 60px; }
+  .summary { display:flex; gap:16px; flex-wrap:wrap; margin:18px 0 26px; }
+  .summary .card { background:#fff; border:1px solid #e3e8ee; border-radius:10px;
+                   padding:14px 18px; min-width:120px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .summary .card b { display:block; font-size:24px; color:var(--blue); }
+  .summary .card span { font-size:12px; color:#666; }
+  section { background:#fff; border:1px solid #e3e8ee; border-radius:10px;
+            padding:8px 16px 16px; margin-bottom:22px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  h2 { color:var(--blue); border-bottom:2px solid #e3e8ee; padding-bottom:6px; font-size:18px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { border:1px solid #dfe4ea; padding:8px 10px; vertical-align:top; text-align:left; }
+  thead th { background:#eef2f7; position:sticky; top:0; font-size:12px; }
+  tr.acc td.cat { background:var(--acc); }
+  tr.func td.cat { background:var(--func); }
+  td.num { text-align:center; width:34px; color:#888; }
+  td.id { font-family:ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; color:#1F4E79; }
+  td.pri { text-align:center; font-weight:600; }
+  td.cmt { font-size:12px; color:#7a5a13; font-style:italic; }
+  span.cmt-tag { display:block; padding:6px 8px; background:#fff2cc; border-left:3px solid #e0a030; border-radius:3px; }
+  ol, ul { margin:0; padding-left:18px; }
+  li { margin:2px 0; }
+  p.precond { margin:0 0 6px; padding:6px 8px; background:#fbf3e4; border-left:3px solid #e0a030; color:#7a5a13; font-size:13px; border-radius:3px; }
+  p.precond strong { color:#9a6a10; }
+  p.cond { margin:0 0 6px; padding:6px 8px; background:#eaf1fb; border-left:3px solid #2f6fb0; color:#13476e; font-size:13px; border-radius:3px; }
+  p.cond strong { color:#1c5a8a; }
+  .meta h3 { color:var(--blue); margin:26px 0 8px; }
+  table.ov { table-layout:fixed; margin:2px 0 4px; }
+  table.ov th:first-child, table.ov td:first-child { width:104px; font-weight:600; }
+  table.ov td { vertical-align:top; word-wrap:break-word; }
+  table.ov th, table.ov td { padding:6px 12px; }
+  .meta table th { background:#eef2f7; }
+  footer { text-align:center; color:#999; font-size:12px; padding:20px; }
+  @media print {
+    @page { size:A4 landscape; margin:8mm; }
+    body { background:#fff; font-size:11px; }
+    header { padding:10px 14px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    header h1 { font-size:17px; }
+    header p { font-size:11px; }
+    main { max-width:none; padding:0; }
+    .summary { margin:8px 0 10px; gap:10px; }
+    .summary .card { box-shadow:none; padding:8px 12px; min-width:90px; }
+    .summary .card b { font-size:18px; }
+    .summary .card span { font-size:10px; }
+    section { box-shadow:none; padding:4px 10px 10px; margin-bottom:12px; break-inside:auto; }
+    h2 { font-size:15px; margin:6px 0 8px; }
+    table { font-size:10px; }
+    th, td { padding:3px 4px; }
+    thead th { position:static; font-size:9.5px; }
+    tr { break-inside:avoid; }
+    table.cases { table-layout:fixed; }
+    table.cases th:nth-child(1), table.cases td.num { width:20px; }
+    table.cases th:nth-child(2), table.cases td.id { width:82px; }
+    table.cases th:nth-child(4), table.cases td:nth-child(4) { width:23%; }
+    table.cases th:nth-child(7), table.cases td.cat { width:62px; }
+    table.cases th:nth-child(8), table.cases td.pri { width:26px; }
+    table.cases th:nth-child(9), table.cases td.cmt { width:8%; }
+    .meta table, .meta th, .meta td { font-size:9.5px; }
+    table.ov { table-layout:fixed; }
+    table.ov th:first-child, table.ov td:first-child { width:22mm; }
+    table.ov th, table.ov td { padding:3px 7px; font-size:9.5px; }
+    table.ov td:first-child { font-size:9.5px; }
+    section { page-break-inside:auto; }
+    p.precond, p.cond { font-size:10px; padding:3px 5px; }
+    td.cmt { font-size:9.5px; }
+    ol, ul { padding-left:15px; }
+    footer { padding:6px; }
+  }
+</style></head>
+<body>
+<header>
+  <h1>ACC Files Tool — Web UI Test Case Design</h1>
+  <p><b>Goal:</b> Upload a new .txt file to a naming-standard-applied folder in ACC Files, then delete it, restore it with a new file name.</p>
+  <p><b>Test project:</b> acc.autodesk.com/docs/files/projects/xxxx</p>
+  <p><b>Scope:</b> Design only — definitions, not executed results. No execution status is recorded in this document.</p>
+</header>
+<main>
+  <div class="summary">
+    <div class="card"><b>86</b><span>Total cases</span></div>
+    <div class="card"><b>29</b><span>Acceptance</span></div>
+    <div class="card"><b>57</b><span>Functional</span></div>
+    <div class="card"><b>8</b><span>Modules A–H</span></div>
+    <div class="card"><b>P1/P2/P3</b><span>Priority</span></div>
+  </div>
+  <p style="font-size:13px;color:#555">
+    Cases are grouped by page / dialog / flow (A–H). Each case focuses on one small flow and assumes other prerequisites are correct.
+    <b>Acceptance</b> = end-to-end / must-pass scenario; <b>Functional</b> = specific behaviour, negative or boundary.
+  </p>
+  <section>
+    <h2>Overview</h2>
+    <table class="ov">
+      <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+      <tbody><tr><td><b>Goal</b></td><td>Upload a new .txt file to a naming-standard-applied folder in ACC Files, then delete it, restore it with a new file name.</td></tr><tr><td><b>Project</b></td><td>https://acc.autodesk.com/docs/files/projects/xxxx</td></tr><tr><td><b>Scope</b></td><td>Design only — test-case DEFINITIONS, not executed results. No execution status is recorded in this document.</td></tr><tr><td><b>Naming</b></td><td>7 naming-convention attributes in the file name (delimiter &#x27;-&#x27;); 4 associated attributes stored as metadata, never in the name.</td></tr><tr><td><b>Permission</b></td><td>Folder permission levels (View-only / View+Download / Create+Upload / Edit / Manage). Upload granted at Create+Upload and above; Delete &amp; Restore at Edit and above. See Autodesk &#x27;Project Member Folder Permission Levels&#x27;.</td></tr><tr><td><b>Grouping</b></td><td>Cases are organised by page / dialog / flow (A–H). Each case focuses on one small flow and assumes other prerequisites are correct.</td></tr><tr><td><b>Categories</b></td><td>Acceptance = end-to-end / must-pass user scenario.  Functional = specific behaviour, negative or boundary.</td></tr><tr><td><b>Priority</b></td><td>P1 = must pass before sign-off; P2 = important; P3 = nice to have.</td></tr><tr><td><b>Open items</b></td><td>1) Full Type / Role / Status / Classification code lists — needed to parameterise the dropdowns. 2) Exact length rule for Originator. 3) Permission level of the supplied account. 4) Is the project folder shared (concurrent writers)? 5) Is there a total file-name length limit (e.g. 257 chars)? — determines the expected result of TC-UPL-24. 6) Product team: is the Upload-vs-Restore difference on same names intended? (Upload allows V1-&gt;V2; Restore rejects with &quot;A file with this name already exists.&quot;)</td></tr><tr><td><b>Browsers</b></td><td>Chromium = primary browser, all cases, blocking. Firefox = Acceptance / P1 set. WebKit (Safari) = spot-check, non-blocking. This is an EXECUTION scope decision, not a test case: module H defines what to compare across browsers, not how the runs are driven.</td></tr><tr><td><b>Comment</b></td><td>Optional designer&#x27;s note for a case — e.g. a usability observation or a product finding that is explicitly NOT counted as a defect. Leave blank when nothing to add.</td></tr></tbody>
+    </table>
+  </section>
+  
+        <section>
+          <h2>A. Project Member Folder Permission</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="func">
+              <td class="num">1</td>
+              <td class="id">TC-ACC-01</td>
+              <td>Account with NO project access cannot see or use the project</td>
+              <td>A test account that is not a member of the project must not even see the project, so it can never reach the upload / delete / restore flow.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> provision a test account with NO membership / access to the target project.</p><ol><li>Sign in with that account.</li><li>Look for the project in the project list / home; also try the assignment deep-link directly.</li></ol></td>
+              <td><ul><li>The project is not listed for this account.</li><li>Opening the deep-link is rejected (no access / not found).</li><li>There is no path to the folder, therefore no upload / delete / restore is possible.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">2</td>
+              <td class="id">TC-ACC-02</td>
+              <td>Read-only (Viewer) account sees project but cannot upload</td>
+              <td>A read-only account can open the project and the folder, but every upload entry point is blocked; the server must enforce this, not just the UI.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> provision a test account with Read-only (Viewer) permission on the project / folder.</p><ol><li>Sign in and open the naming-standard folder.</li><li>Inspect the Action Bar / row menu for Upload, drag-and-drop, and any upload deep-link.</li><li>Attempt to start an upload through every available path.</li></ol></td>
+              <td><ul><li>The project and folder are visible (read access works).</li><li>Upload control is hidden or disabled; no UI path starts an upload.</li><li>A direct upload request is rejected server-side (not only UI-hidden) — see TC-PRM-01.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">3</td>
+              <td class="id">TC-ACC-03</td>
+              <td>Edit (Editor) account can open folder and upload</td>
+              <td>An account with Edit permission can reach the folder, see the Upload button, open the validator dialog and complete an upload.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> provision a test account with Edit permission on the project / folder.</p><ol><li>Sign in and open the naming-standard folder (via folder tree or deep-link).</li><li>Click Upload; confirm the validator dialog opens.</li><li>Fill the attributes and complete the upload of a compliant .txt.</li></ol></td>
+              <td><ul><li>Folder is visible; the Upload button is enabled.</li><li>The Upload validator dialog opens.</li><li>The upload succeeds; the file appears in the folder (see Group D for attribute rules).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">4</td>
+              <td class="id">TC-ACC-04</td>
+              <td>Project Admin account can open folder and upload</td>
+              <td>A Project Admin account can reach the folder, see the Upload button, open the validator dialog and complete an upload (same capability as Editor for this flow).</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> provision a test account with Project Admin permission on the project / folder.</p><ol><li>Sign in and open the naming-standard folder.</li><li>Click Upload; confirm the validator dialog opens.</li><li>Fill the attributes and complete the upload of a compliant .txt.</li></ol></td>
+              <td><ul><li>Folder is visible; the Upload button is enabled.</li><li>The Upload validator dialog opens.</li><li>The upload succeeds; the file appears in the folder.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">5</td>
+              <td class="id">TC-ACC-05</td>
+              <td>Create + Upload permission can upload files</td>
+              <td>A member granted the &#x27;Create + Upload&#x27; folder-permission level (below Edit) can reach the folder and perform an upload — per the documented model, &#x27;Upload files / Upload to a folder&#x27; is granted at the Create + Upload level and above.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> provision a test account with &#x27;Create + Upload&#x27; folder permission on the project / folder.</p><ol><li>Sign in and open the naming-standard folder.</li><li>Confirm the Upload button is present and enabled.</li><li>Click Upload, complete the validator, and upload a compliant .txt.</li></ol></td>
+              <td><ul><li>Folder is visible; the Upload button is enabled (Create + Upload grants upload).</li><li>The upload succeeds; the file appears in the folder.</li><li>Note: Create + Upload does NOT grant Delete / Restore (those are Edit-level) — see TC-PRM-01 / TC-PRM-02.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">6</td>
+              <td class="id">TC-PRM-01</td>
+              <td>Delete / Restore permission matrix — every role</td>
+              <td><p class="cond"><strong>Test condition:</strong> Across 3 permission levels — Project Admin (Manage), Editor (Edit), Read-only (View) — each attempting Delete and Restore. (Upload permission is covered separately by TC-ACC-01..05.)</p>Delete and Restore are file actions granted at the Edit level and inherited by Manage (Project Admin); they are NOT available at View-only levels. This case verifies Delete/Restore availability across roles — upload is intentionally excluded to avoid overlap with the TC-ACC upload cases.</td>
+              <td><ol><li>For each role (Project Admin / Manage, Editor / Edit, Read-only / View), attempt: delete a file and restore a file.</li><li>Record for each combination whether the action is available in the UI and whether it succeeds server-side.</li></ol></td>
+              <td><ul><li>Project Admin (Manage): Delete and Restore both allowed.</li><li>Editor (Edit): Delete and Restore both allowed (Restore requires Edit level — see help docs).</li><li>Read-only (View): Delete and Restore both blocked (hidden/disabled in UI and enforced server-side).</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">7</td>
+              <td class="id">TC-PRM-02</td>
+              <td>Delete &amp; Restore require Edit (or higher: Project Admin); no Edit/Manage → blocked</td>
+              <td><p class="cond"><strong>Test condition:</strong> Users WITHOUT Edit/Manage permission (View-only / View+Download / Create+Upload) vs users WITH Edit (Editor) and WITH Manage (Project Admin). Each attempts Delete and Restore.</p>Per the documented permission model, Delete and Restore are file actions granted at the Edit level and inherited by Manage (Project Admin has Manage on all folders by default). A user with neither Edit nor Manage cannot perform them.</td>
+              <td><ol><li>Sign in as a user with neither Edit nor Manage permission (e.g. View-only or Create+Upload).</li><li>Attempt Delete from the row menu and Restore from Deleted Items.</li><li>Sign in as an Editor (Edit) and repeat both operations.</li><li>Sign in as a Project Admin (Manage) and repeat both operations.</li></ol></td>
+              <td><ul><li>Without Edit/Manage: Delete and Restore are hidden or disabled; server rejects direct attempts.</li><li>With Edit (Editor): Delete and Restore both succeed.</li><li>With Manage (Project Admin): Delete and Restore both succeed — Admin inherits edit-level file operations.</li><li>Reference: Project Member Folder Permission Levels (Delete / Restore at Edit level; locked files cannot be deleted — TC-DEL-04).</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">8</td>
+              <td class="id">TC-DEL-04</td>
+              <td>Delete a locked file is blocked</td>
+              <td><p class="cond"><strong>Test condition:</strong> Target file is LOCKED by another user.</p>A file locked by another user cannot be deleted, regardless of the acting user&#x27;s permission.</td>
+              <td><ol><li>Open a file locked by another user → attempt Delete.</li></ol></td>
+              <td><ul><li>Delete action is disabled / blocked with an explanatory message.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+        <section>
+          <h2>B. Action Bar / Upload Entry</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="acc">
+              <td class="num">9</td>
+              <td class="id">TC-AB-01</td>
+              <td>Upload button present and enabled in Action Bar</td>
+              <td>The Action Bar on the Files page exposes an enabled Upload control for an authorized user.</td>
+              <td><ol><li>Open the naming-standard folder as an Editor/Admin.</li><li>Locate the Action Bar at the top of the Files page.</li></ol></td>
+              <td><ul><li>An &#x27;Upload&#x27; button (split button) is visible and enabled.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">10</td>
+              <td class="id">TC-AB-02</td>
+              <td>Clicking Upload opens the Upload dialog without URL change</td>
+              <td>Triggering Upload shows the file-selection/upload dialog; the main route does not navigate away.</td>
+              <td><ol><li>Click the &#x27;Upload&#x27; button in the Action Bar.</li><li>Observe the URL and the modal that appears.</li></ol></td>
+              <td><ul><li>An Upload dialog/modal appears.</li><li>The browser URL is unchanged (no full navigation) — it is an in-page overlay.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">11</td>
+              <td class="id">TC-AB-03</td>
+              <td>&#x27;Deleted Items&#x27; entry present in Action Bar</td>
+              <td>The Action Bar exposes the Deleted Items entry used later in the restore flow.</td>
+              <td><ol><li>With at least one deleted file, inspect the Action Bar.</li><li>Click &#x27;Deleted Items&#x27;.</li></ol></td>
+              <td><ul><li>A &#x27;Deleted Items&#x27; button is present.</li><li>Clicking it navigates to moduleId=deleted and lists deleted files.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+        <section>
+          <h2>C. Upload (Workflow &amp; Controls)</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="acc">
+              <td class="num">12</td>
+              <td class="id">TC-UPL-01</td>
+              <td>Workflow — Upload a compliant .txt file (happy path)</td>
+              <td>End-to-end upload of a single valid .txt file with all 11 attributes filled correctly. This is the reference flow reused by the other workflow cases.</td>
+              <td><ol><li>Click Upload -&gt; Select files -&gt; choose a.txt.</li><li>On the &#x27;Upload files&#x27; page, fill all 11 attributes (Project=test2, Originator=XXX, Volume=ZZ, Level=ZZ, Type=CA, Role=D, Number=1234, Status=S0, Revision=dff, Classification=Ac_05, custom fields=222).</li><li>Click Upload; wait for progress 0%-&gt;100%-&gt;&#x27;Uploaded to Name-standard&#x27;.</li><li>Click Done.</li></ol></td>
+              <td><ul><li>Validator errors clear and Upload is enabled once all fields valid.</li><li>Toast: &#x27;1 file has been successfully uploaded.&#x27;</li><li>After Done the folder view shows the new file: composed name &#x27;test2-XXX-ZZ-ZZ-CA-D-1234.txt&#x27; with version badge V1 — correct name/version in the Files list (file-list verification folded in here; no separate list-only case).</li><li>The row displays the name and version badge; the 4 associated attributes (Status / Revision / Classification / custom fields) are shown as metadata and are NOT part of the file name.</li><li>The row is selectable via its checkbox and the Action Bar reacts to the selection (list rendering + selectability verified as part of this flow).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">13</td>
+              <td class="id">TC-UPL-09</td>
+              <td>Workflow — &#x27;Remove all&#x27; -&gt; Remove returns to Upload dialog; Done leaves no new file</td>
+              <td>After a successful .txt upload, on the &#x27;Upload files&#x27; page choose &#x27;Remove all&#x27; -&gt; confirm &#x27;Remove&#x27;; the flow returns to the Upload dialog and Done produces no new file in the folder.</td>
+              <td><ol><li>Complete the upload of a .txt up to the &#x27;Upload files&#x27; page (files uploaded successfully).</li><li>Click &#x27;Remove all&#x27;.</li><li>In the Remove-all confirmation dialog, click &#x27;Remove&#x27;.</li><li>The page returns to the Upload dialog (no pending file).</li><li>Click &#x27;Done&#x27;.</li></ol></td>
+              <td><ul><li>No file is created in the folder.</li><li>The Files list shows no new entry.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">14</td>
+              <td class="id">TC-UPL-26</td>
+              <td>Workflow — &#x27;Cancel&#x27; on Upload files page returns to Upload dialog; Done leaves no new file</td>
+              <td>After a successful .txt upload, clicking &#x27;Cancel&#x27; on the &#x27;Upload files&#x27; page returns to the Upload dialog; &#x27;Done&#x27; then leaves no new file in the folder.</td>
+              <td><ol><li>Complete the upload of a .txt up to the &#x27;Upload files&#x27; page (files uploaded successfully).</li><li>Click &#x27;Cancel&#x27; on the &#x27;Upload files&#x27; page.</li><li>The page returns to the Upload dialog (no pending file).</li><li>Click &#x27;Done&#x27;.</li></ol></td>
+              <td><ul><li>No file is created in the folder.</li><li>The Files list shows no new entry.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">15</td>
+              <td class="id">TC-UPL-27</td>
+              <td>Workflow — &#x27;Remove all&#x27; -&gt; Cancel stays on Upload files page</td>
+              <td>After a successful .txt upload, choosing &#x27;Remove all&#x27; then cancelling the confirmation keeps the user on the &#x27;Upload files&#x27; page with the file still pending.</td>
+              <td><ol><li>Complete the upload of a .txt up to the &#x27;Upload files&#x27; page (files uploaded successfully).</li><li>Click &#x27;Remove all&#x27;.</li><li>In the Remove-all confirmation dialog, click &#x27;Cancel&#x27;.</li></ol></td>
+              <td><ul><li>The page stays on the &#x27;Upload files&#x27; page; the pending upload is retained, not removed.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">16</td>
+              <td class="id">TC-UPL-28</td>
+              <td>Workflow — Bypass naming standard -&gt; confirm Upload -&gt; lands in Holding area</td>
+              <td>After a successful .txt upload, leave at least one naming-standard error unresolved and click &#x27;Upload&#x27;; the &#x27;Upload file?&#x27; confirmation appears, and confirming routes the file to the Holding area (Viewable).</td>
+              <td><ol><li>Complete the upload of a .txt up to the &#x27;Upload files&#x27; page, leaving &gt;=1 naming-standard error unresolved.</li><li>Click &#x27;Upload&#x27;.</li><li>The &#x27;Upload file?&#x27; dialog appears with the message: &quot;This file will not display in Name-standard applied folder yet as it doesn&#x27;t conform to the compliance settings. You can validate the file later in the holding area.&quot;</li><li>Click &#x27;Upload&#x27; in that confirmation dialog.</li><li>The page returns to the Upload dialog; the upload status shows &#x27;Viewable in holding area&#x27;.</li><li>Click &#x27;View&#x27; to navigate to the Holding area page.</li></ol></td>
+              <td><ul><li>The file is NOT placed in the Name-standard applied folder.</li><li>On the Holding area page (moduleId=holding-area) the just-added file is listed.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">17</td>
+              <td class="id">TC-UPL-29</td>
+              <td>Workflow — Bypass naming standard -&gt; Cancel confirmation stays on Upload files page</td>
+              <td>After a successful .txt upload, clicking &#x27;Upload&#x27; with unresolved errors shows the &#x27;Upload file?&#x27; dialog; cancelling it returns to the &#x27;Upload files&#x27; page with the file still pending.</td>
+              <td><ol><li>Complete the upload of a .txt up to the &#x27;Upload files&#x27; page, leaving &gt;=1 naming-standard error unresolved.</li><li>Click &#x27;Upload&#x27;; the &#x27;Upload file?&#x27; confirmation dialog appears.</li><li>Click &#x27;Cancel&#x27; in the confirmation dialog.</li></ol></td>
+              <td><ul><li>The page returns to the &#x27;Upload files&#x27; page; the pending file is retained (not uploaded, not in holding area).</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">18</td>
+              <td class="id">TC-UPL-30</td>
+              <td>Workflow — Upload two differently-named .txt files; both listed in Upload dialog</td>
+              <td>Repeat the happy-path upload for a second .txt with a different name; after returning to the Upload dialog both uploaded files are listed together.</td>
+              <td><ol><li>Repeat TC-UPL-01 to upload a first .txt (name A).</li><li>Start a second upload of a different .txt (name B) and complete it up to the &#x27;Upload files&#x27; page.</li><li>Click &#x27;Upload&#x27;, then return to the Upload dialog.</li></ol></td>
+              <td><ul><li>The Upload dialog lists both uploaded files (name A and name B) together.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">19</td>
+              <td class="id">TC-UPL-25</td>
+              <td>Workflow — Re-upload an existing file name -&gt; version increments (V1 -&gt; V2)</td>
+              <td>Uploading a .txt whose composed name equals an existing file (e.g. test-XXX-ZZ-XX-AF-A-12345.txt) must not create a second file — it should create a new version.</td>
+              <td><ol><li>Ensure the folder already contains test-XXX-ZZ-XX-AF-A-12345.txt at V1.</li><li>Upload another local .txt with an identical attribute set and complete the validator.</li><li>Inspect the folder listing and the file&#x27;s version badge.</li></ol></td>
+              <td><ul><li>The folder still lists exactly ONE test-XXX-ZZ-XX-AF-A-12345 file.</li><li>Its version increments from V1 to V2; no duplicate row appears.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">20</td>
+              <td class="id">TC-UPL-31</td>
+              <td>Workflow — Uploaded file persists across a sign-out / sign-in cycle</td>
+              <td>The upload is committed server-side, not just rendered optimistically in the client: after signing out and signing back in, the file is still present with the same name, version and attributes.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a compliant .txt upload has just completed (TC-UPL-01) and the file is visible in the Files list.</p><ol><li>Complete TC-UPL-01 and confirm the file is listed (name &#x27;test2-XXX-ZZ-ZZ-CA-D-1234.txt&#x27;, V1).</li><li>Sign out of ACC.</li><li>Sign back in with the same account and open the same project / folder.</li><li>Locate the file and open its detail.</li></ol></td>
+              <td><ul><li>The file is still present in the folder after re-authentication.</li><li>Composed name and version (V1) are unchanged.</li><li>All 11 attributes are intact, including the 4 associated attributes stored as metadata (Status / Revision / Classification / custom fields).</li><li>If the file is MISSING after re-login, the earlier success toast was an optimistic UI update that was never committed — log as a defect (data loss).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">21</td>
+              <td class="id">TC-UPL-02</td>
+              <td>Control — File name composed from the 7 naming-convention attributes only</td>
+              <td>Verify the stored file name is built only from naming attributes, and associated attributes never leak into the name.</td>
+              <td><ol><li>Upload with distinct values per attribute (e.g. test2-XXX-ZZ-ZZ-CA-D-1234).</li><li>Open the file&#x27;s attribute detail after upload.</li></ol></td>
+              <td><ul><li>Stored name = Project-Originator-Volume-Level-Type-Role-Number + &#x27;.txt&#x27;.</li><li>Status / Revision / Classification / custom fields are stored as metadata and do NOT appear in the file name.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">22</td>
+              <td class="id">TC-UPL-03</td>
+              <td>Control — Original .txt extension is preserved</td>
+              <td>The original file extension is kept and not renamed or stripped during composition.</td>
+              <td><ol><li>Upload a .txt file and complete the validator.</li></ol></td>
+              <td><ul><li>Composed name ends with &#x27;.txt&#x27;; the extension is preserved exactly.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">23</td>
+              <td class="id">TC-UPL-04</td>
+              <td>Control — Upload enabled only when all errors resolved</td>
+              <td>The Upload button stays disabled while any validation error is present and enables the moment the last error clears.</td>
+              <td><ol><li>Open the validator with all fields empty; observe the Upload button.</li><li>Fill attributes one by one; observe the button state after each.</li></ol></td>
+              <td><ul><li>Upload is disabled while any error is present.</li><li>Upload becomes enabled exactly when the last error clears.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">24</td>
+              <td class="id">TC-UPL-05</td>
+              <td>Control — Attribute values persisted after upload</td>
+              <td>All 11 attribute values entered at upload are stored exactly as entered.</td>
+              <td><ol><li>Complete TC-UPL-01, then open the file&#x27;s attribute editor.</li></ol></td>
+              <td><ul><li>All 11 attributes show exactly the values entered at upload (no truncation/normalisation surprises).</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">25</td>
+              <td class="id">TC-UPL-06</td>
+              <td>Control — Upload with all attributes empty blocked</td>
+              <td>Submitting with nothing filled shows the compliance banner and disables Upload.</td>
+              <td><ol><li>Select a file; leave all 11 attributes empty.</li></ol></td>
+              <td><ul><li>Red banner: &#x27;1 file doesn&#x27;t comply with compliance settings. Resolve errors with: naming standard (1), and required attributes (1).&#x27;</li><li>All 11 cells flagged; Upload disabled.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">26</td>
+              <td class="id">TC-UPL-07</td>
+              <td>Control — One required attribute left empty flagged</td>
+              <td>Leaving a single required attribute (Number) empty produces a targeted error.</td>
+              <td><ol><li>Fill 10 of 11 attributes; leave Number empty.</li></ol></td>
+              <td><ul><li>Banner shows &#x27;required attributes (1)&#x27;; the Number cell is flagged red; Upload disabled.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">27</td>
+              <td class="id">TC-UPL-08</td>
+              <td>Control — Required-attribute tooltip content is correct</td>
+              <td>Hovering a flagged cell shows the exact rule (required / char type / length).</td>
+              <td><ol><li>On the flagged Number cell, hover the validation indicator.</li></ol></td>
+              <td><ul><li>Tooltip: &#x27;Value must be: 1. Value is required 2. Character type: Numeric 3. Character length: 4 to 6&#x27;.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">28</td>
+              <td class="id">TC-UPL-10</td>
+              <td>Control — Attribute character-length boundaries (data-driven)</td>
+              <td>Each text attribute is validated at min-1 / min / max / max+1. Values tried per attribute:</td>
+              <td><ol><li>Project (Alphanumeric 2-6): a / ab / abcdef / abcdefg</li><li>Number (Numeric 4-6): 123 / 1234 / 123456 / 1234567</li><li>Revision (Alphanumeric 3-8): ab / dff / abcdefgh / abcdefghi</li><li>custom fields (Numeric 2-5): 1 / 22 / 22222 / 222222</li><li>Enter each value and observe validation + Upload state.</li></ol></td>
+              <td><ul><li>Length 1 and max+1 rejected; min and max accepted (e.g. Project 1 &amp; 7 fail, 2 &amp; 6 pass).</li><li>Upload disabled for any out-of-range value.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">29</td>
+              <td class="id">TC-UPL-11</td>
+              <td>Control — Non-numeric value in a Numeric field</td>
+              <td>Entering letters in Number (a Numeric field) is rejected.</td>
+              <td><ol><li>Enter &#x27;abcd&#x27; in the Number attribute.</li></ol></td>
+              <td><ul><li>Validation error (Character type: Numeric); Upload disabled.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">30</td>
+              <td class="id">TC-UPL-12</td>
+              <td>Control — Special characters in Project</td>
+              <td>Special characters in an attribute value are rejected by the naming standard.</td>
+              <td><ol><li>Enter &#x27;test@#&#x27; in the Project attribute.</li></ol></td>
+              <td><ul><li>&#x27;special characters&#x27; error listed in the banner; Upload disabled.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">31</td>
+              <td class="id">TC-UPL-13</td>
+              <td>Control — Value contains the delimiter &#x27;-&#x27; (key negative)</td>
+              <td>An attribute value that itself contains the filename delimiter must be rejected — the product&#x27;s documented limitation.</td>
+              <td><ol><li>Enter &#x27;test-re-&#x27; in the Project attribute (delimiter is &#x27;-&#x27;).</li></ol></td>
+              <td><ul><li>Banner reports &#x27;naming standard (1), and special characters (1)&#x27;.</li><li>The cell is flagged; Upload disabled; name preview shows the ambiguity.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">32</td>
+              <td class="id">TC-UPL-14</td>
+              <td>Control — Delimiter-inside-value across configured delimiters</td>
+              <td>Same behaviour when the standard is configured for &#x27;-&#x27;, &#x27;_&#x27;, or &#x27;.&#x27; in turn.</td>
+              <td><ol><li>Repeat TC-UPL-13 with the standard configured for each of &#x27;-&#x27;, &#x27;_&#x27;, &#x27;.&#x27; delimiters.</li></ol></td>
+              <td><ul><li>A value containing the active delimiter is rejected in all three configurations.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">33</td>
+              <td class="id">TC-UPL-16</td>
+              <td>Control — Leading / trailing spaces in a value</td>
+              <td>Whitespace handling must be explicit and consistent, never silently stored.</td>
+              <td><ol><li>Enter &#x27;  test2  &#x27; in the Project attribute.</li></ol></td>
+              <td><ul><li>Either trimmed-and-accepted or rejected as invalid — behaviour must be explicit and consistent.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">34</td>
+              <td class="id">TC-UPL-17</td>
+              <td>Control — Non-compliant file with Holding area ON</td>
+              <td>When the Holding area is enabled, a non-compliant file is quarantined there instead of the folder (see the bypass workflow TC-UPL-28/29 for the user-facing path).</td>
+              <td><ol><li>With Holding area ON, upload a file and leave errors unresolved; choose to continue without fixing.</li></ol></td>
+              <td><ul><li>Compliant files land in the folder; the non-compliant file lands in the Holding area tab and is not a normal file.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">35</td>
+              <td class="id">TC-UPL-18</td>
+              <td>Control — Non-compliant file with Holding area OFF (test-project config)</td>
+              <td>In the test project (Holding area OFF), an unresolved file cannot enter the folder — Upload is blocked.</td>
+              <td><ol><li>With Holding area OFF, upload a file and leave errors unresolved.</li></ol></td>
+              <td><ul><li>Upload is blocked (button disabled) — the file cannot enter the folder unresolved.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">36</td>
+              <td class="id">TC-UPL-20</td>
+              <td>Control — Remove a single file from the validator</td>
+              <td>Removing one row from a multi-file selection recalculates the banner.</td>
+              <td><ol><li>Add 2 files, click the remove (X) on one row.</li></ol></td>
+              <td><ul><li>Row removed; banner recalculates for the remaining file(s).</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">37</td>
+              <td class="id">TC-UPL-22</td>
+              <td>Control — Original file name containing special characters &lt; &gt; : &quot; / | ? * \</td>
+              <td>The local .txt file name itself contains special characters; verify how upload treats them given the stored name is composed from attributes.</td>
+              <td><ol><li>Prepare a .txt file whose local name contains special characters, e.g. a&lt;b&gt;c:d&quot;e|f?g*h.txt (create where the OS allows).</li><li>Click Upload -&gt; Select files -&gt; choose the file.</li><li>Observe the validator / file-list behaviour; complete the 11 attributes if allowed.</li></ol></td>
+              <td><ul><li>Behaviour is explicit: either the file is rejected with a clear message, or the stored name is composed from the 7 naming attributes so the special characters never propagate into ACC.</li><li>No file whose stored name contains special characters can be created (they would break the naming standard). Record actual behaviour.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">38</td>
+              <td class="id">TC-UPL-23</td>
+              <td>Control — Original file name containing spaces</td>
+              <td>A local .txt file name with spaces (e.g. &#x27;my test file.txt&#x27;) is uploaded; verify space handling.</td>
+              <td><ol><li>Prepare &#x27;my test file.txt&#x27; and select it for upload.</li><li>Complete the 11 attributes and submit.</li></ol></td>
+              <td><ul><li>Spaces in the original local name are handled explicitly (trimmed / rejected / ignored) — never silently stored.</li><li>The stored name (composed from attributes) contains no spaces; behaviour is consistent across uploads. Record actual.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">39</td>
+              <td class="id">TC-UPL-24</td>
+              <td>Control — Original file name of 257 characters (length boundary)</td>
+              <td>Upload a .txt whose local name is 257 chars; check whether the naming standard / folder imposes a total-name length limit.</td>
+              <td><ol><li>Prepare a .txt with a 257-character file name and select it for upload.</li><li>Observe whether the validator or the folder&#x27;s naming standard flags a length error.</li><li>Cross-check the File Naming Standard help page for any total-length rule.</li></ol></td>
+              <td><ul><li>If a length limit exists, the file is rejected with a clear message; if not, the composed name (bounded by per-attribute lengths) is stored and the original 257-char name does not propagate.</li><li>Documented rule confirmed and recorded as actual result.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">40</td>
+              <td class="id">TC-NET-01</td>
+              <td>Failure — No network connection at upload start</td>
+              <td>The workstation has no network connectivity when the user attempts an upload.</td>
+              <td><ol><li>Disconnect the network, then open the Files page and start an upload.</li><li>Fill valid attributes and click Upload.</li><li>Reconnect the network and observe the recovery path.</li></ol></td>
+              <td><ul><li>A clear failure message is shown (no silent hang, no partial/corrupt file created).</li><li>Per docs: &#x27;Click Retry to try again if network or server issues are resolved&#x27; — after reconnection, Retry (or re-upload) completes successfully.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">41</td>
+              <td class="id">TC-NET-02</td>
+              <td>Failure — Server error responses (500 / 502 / 503 / 504) when Upload is clicked</td>
+              <td>The Upload-stage server check fails with each common server / gateway error code in turn (500, 502, 503, 504); all four must surface an explicit failure and offer the same Retry path.</td>
+              <td><ol><li>Fill all 11 attributes with valid values.</li><li>For each status code in turn (500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout): simulate the server returning that code (proxy/mock, e.g. Playwright route fulfil), then click Upload.</li><li>Observe and record the error surface for each code — message wording, whether Retry is offered, whether the dialog stays usable.</li><li>Restore the server (remove the mock) and click Retry; confirm the upload completes.</li></ol></td>
+              <td><ul><li>For every one of 500 / 502 / 503 / 504: Upload fails with an explicit error — files can&#x27;t be added to the Files tool (documented Upload-stage failure).</li><li>Failure handling is CONSISTENT across the four codes: no silent hang, no stuck progress bar, no blank/broken error surface; a Retry option is offered in all four.</li><li>After server recovery, Retry completes the upload; no duplicate or partial file is created by any failed attempt.</li><li>Record any difference in wording between codes (e.g. 503 &#x27;service unavailable&#x27; vs 504 &#x27;gateway timeout&#x27;) — differences are a finding, not a failure.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">42</td>
+              <td class="id">TC-NET-03</td>
+              <td>Failure — Network disconnected at the moment of clicking Upload</td>
+              <td>Settings are filled, the user clicks Upload and the network drops exactly at submit time.</td>
+              <td><ol><li>Fill all 11 attributes with valid values.</li><li>Disable the network immediately when clicking Upload.</li><li>Observe the result, then reconnect and retry.</li></ol></td>
+              <td><ul><li>Explicit failure feedback (network connectivity is one of the documented Upload-stage checks).</li><li>Retry / re-upload succeeds after reconnection; no partial file, no phantom entry in the list.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">43</td>
+              <td class="id">TC-NET-04</td>
+              <td>Failure — Network drops during processing (after successful submit)</td>
+              <td>Upload is submitted OK, the upload dialog shows processing progress, then the network drops mid-processing.</td>
+              <td><ol><li>Submit a valid upload; while the dialog shows processing (0%→100%), disconnect the network.</li><li>Observe the dialog / toast / final state.</li><li>Reconnect and use Retry if offered.</li></ol></td>
+              <td><ul><li>The failure is surfaced clearly (not a silent success, no stuck progress bar without feedback).</li><li>Retry / re-upload completes; final state is consistent — exactly one file, correct version, no orphan entry.</li><li>Record whether any automatic retry exists or only manual Retry.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">44</td>
+              <td class="id">TC-NET-05</td>
+              <td>Failure — Backend server unavailable during processing</td>
+              <td>Upload submitted OK; the backend server becomes unavailable (500/504) while the upload dialog is processing.</td>
+              <td><ol><li>Submit a valid upload; during processing, make the server return 500/504 (proxy/mock or outage).</li><li>Observe the dialog / toast / final state.</li><li>Recover the server and retry.</li></ol></td>
+              <td><ul><li>Processing failure is reported explicitly; the file is not added to the Files tool on failure (documented behaviour).</li><li>Retry after recovery completes the upload; no duplicate/partial result. Record actual retry behaviour.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">45</td>
+              <td class="id">TC-FILE-01</td>
+              <td>Failure — File size over 5 TB</td>
+              <td>A .txt larger than 5 TB exceeds the documented limit — files over 5 TB are listed as a common Process-for-viewing failure.</td>
+              <td><ol><li>Prepare (or simulate at API level) a .txt larger than 5 TB and upload it with valid attributes.</li><li>Observe the Upload stage, then the Process-for-viewing stage.</li></ol></td>
+              <td><ul><li>Documented behaviour: files over 5 TB can&#x27;t be viewed / compared / published to sheets / marked up / exported.</li><li>Record actual Upload-stage UI behaviour (accepted vs rejected) and the error surface.</li><li>Note: a real 5 TB file is likely infeasible in the test environment — verify via documentation plus the largest feasible probe; mark as design-verified.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">46</td>
+              <td class="id">TC-FILE-02</td>
+              <td>Failure — Password-protected file upload</td>
+              <td>A password-protected file passes the Upload stage but fails the Process-for-viewing checks (documented).</td>
+              <td><ol><li>Upload a password-protected file (e.g. password-protected Office/zip container) with valid naming attributes.</li><li>Observe the Upload stage result, then attempt to view / compare / export it.</li></ol></td>
+              <td><ul><li>Upload stage succeeds (file type &amp; name comply); the file is stored with its compliant composed name.</li><li>Process-for-viewing fails as documented: can&#x27;t be viewed, compared, published to sheets, marked up, or exported.</li><li>Error messaging is clear; record actual behaviour.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+        <section>
+          <h2>D. Delete (Workflow &amp; Controls)</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="acc">
+              <td class="num">47</td>
+              <td class="id">TC-DEL-01</td>
+              <td>Workflow — Delete a compliant file</td>
+              <td>Delete a file via the row menu / Action Bar Delete, then confirm it moved to Deleted Items. Row selectability is verified here as part of the delete flow (no separate list-only case).</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file (uploaded per TC-UPL-01).</p><ol><li>In the Files list, select the uploaded file&#x27;s row via its checkbox — the row highlights and the Action Bar reacts.</li><li>Open the row&#x27;s &#x27;…&#x27; (More) menu → Delete (or use the Action Bar Delete).</li><li>Confirm in the Delete dialog.</li><li>Open &#x27;Deleted Items&#x27; and observe the item count / list.</li></ol></td>
+              <td><ul><li>Toast: &#x27;1 file was deleted.&#x27;</li><li>The row disappears from the Files list; after a page refresh it is still absent.</li><li>Deleted Items count increases by exactly 1 and now lists the deleted file (was 0 before, 1 after).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">48</td>
+              <td class="id">TC-DEL-03</td>
+              <td>Workflow — Delete is a soft delete (recoverable)</td>
+              <td>A deleted file remains recoverable via Deleted Items / Restore.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file.</p><ol><li>Delete the file (per TC-DEL-01) and confirm it leaves the Files list.</li><li>Open Deleted Items: the file is listed and the count went up by 1.</li><li>Restore it (see Group F) and return to Deleted Items.</li></ol></td>
+              <td><ul><li>Deleted Items count decreased by 1 again after the restore.</li><li>File returns to the folder with its version and all attribute values intact.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">49</td>
+              <td class="id">TC-DEL-06</td>
+              <td>Workflow — Cancel delete confirmation leaves file intact</td>
+              <td>Cancelling at the confirmation dialog changes nothing.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file.</p><ol><li>Select the file, trigger Delete, then Cancel at the confirmation dialog.</li><li>Open Deleted Items and check the item count.</li></ol></td>
+              <td><ul><li>No toast; file remains in the folder.</li><li>Deleted Items count is unchanged (file absent from the list).</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">50</td>
+              <td class="id">TC-RM-01</td>
+              <td>Control — Row &#x27;…&#x27; (More) menu opens and lists actions</td>
+              <td>The per-row overflow menu (portal-rendered) opens and exposes Delete/Open/Download etc.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file.</p><ol><li>Hover/click the row&#x27;s &#x27;…&#x27; button.</li><li>Observe the menu items.</li></ol></td>
+              <td><ul><li>A menu opens (rendered in a portal, not inside the row); items include at least Delete, Open, Download.</li><li>Clicking outside closes it without side effects.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">51</td>
+              <td class="id">TC-DEL-02</td>
+              <td>Control — Delete confirmation dialog appears</td>
+              <td>Delete requires an explicit confirmation dialog before execution.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file.</p><ol><li>Trigger Delete from the row menu.</li></ol></td>
+              <td><ul><li>A Delete confirmation dialog appears; the delete does not execute without confirmation.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">52</td>
+              <td class="id">TC-DEL-07</td>
+              <td>Control — Delete is not offered in the Action Bar when no file is selected</td>
+              <td>With no row selected, the Action Bar must not expose a Delete action (it only appears once one or more files are selected).</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file.</p><ol><li>Open the folder with the .txt file present and select NOTHING (clear any checkbox).</li><li>Observe the Action Bar and the per-row &#x27;…&#x27; menu.</li><li>Now select one file and re-observe the Action Bar; then select two files and observe again.</li></ol></td>
+              <td><ul><li>With no selection: no Delete action is shown in the Action Bar (Upload etc. remain available).</li><li>After selecting 1 file: Delete appears and applies to that file.</li><li>After selecting 2 files: Delete appears and applies to the whole selection (label reflects the count).</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">53</td>
+              <td class="id">TC-DEL-08</td>
+              <td>Workflow — Holding area &#x27;Delete all&#x27; (no file selected)</td>
+              <td>With nothing selected the Holding area action bar offers &#x27;Delete all&#x27;; the confirmation dialog can be cancelled or confirmed, and confirming removes the file from the Holding area and moves it to Deleted Items.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a non-compliant .txt has been uploaded and is showing in the Holding area; NO file is selected in the list.</p><ol><li>Open the Holding area (the non-compliant .txt is listed, nothing selected).</li><li>Confirm the action bar shows &#x27;Delete all&#x27; (bulk action available with no selection).</li><li>Click &#x27;Delete all&#x27; → the &#x27;Delete file?&#x27; dialog appears → click &#x27;Cancel&#x27;.</li><li>Confirm you are returned to the Holding area with the file still listed.</li><li>Click &#x27;Delete all&#x27; again → in the &#x27;Delete file?&#x27; dialog click &#x27;Delete&#x27;.</li><li>Observe the Holding area list, then open Deleted Items.</li></ol></td>
+              <td><ul><li>With no selection, the bulk action reads &#x27;Delete all&#x27;.</li><li>Cancel returns to the Holding area with the file still present (no change).</li><li>Confirming Delete removes the file from the Holding area list.</li><li>The file now appears in Deleted Items (count +1).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">54</td>
+              <td class="id">TC-DEL-09</td>
+              <td>Workflow — Holding area &#x27;Delete (n)&#x27; with a file selected</td>
+              <td>With one file selected the Holding area action bar offers &#x27;Delete (1)&#x27;; cancelling keeps the file, confirming removes it from the Holding area and moves it to Deleted Items.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a non-compliant .txt is showing in the Holding area; the file IS selected (checkbox checked).</p><ol><li>Open the Holding area and select the file&#x27;s checkbox.</li><li>Confirm the action bar shows &#x27;Delete (1)&#x27; (count reflects the selection).</li><li>Click &#x27;Delete (1)&#x27; → the &#x27;Delete file?&#x27; dialog appears → click &#x27;Cancel&#x27;.</li><li>Confirm you are returned to the Holding area with the file still selected/listed.</li><li>Click &#x27;Delete (1)&#x27; again → in the &#x27;Delete file?&#x27; dialog click &#x27;Delete&#x27;.</li><li>Observe the Holding area list, then open Deleted Items.</li></ol></td>
+              <td><ul><li>With 1 file selected, the action reads &#x27;Delete (1)&#x27;; with n selected it reads &#x27;Delete (n)&#x27;.</li><li>Cancel returns to the Holding area with the file still present (no change).</li><li>Confirming Delete removes the file from the Holding area list.</li><li>The file now appears in Deleted Items (count +1).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">55</td>
+              <td class="id">TC-DI-01</td>
+              <td>Deleted Items — Deleted file appears in Deleted Items</td>
+              <td><p class="cond"><strong>Test condition:</strong> Deleted Items item count before the delete = N; expected after = N+1.</p>After deletion, the file is listed in Deleted Items.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file, and it has just been deleted (per TC-DEL-01).</p><ol><li>Complete TC-DEL-01, then click &#x27;Deleted Items&#x27; in the Action Bar.</li></ol></td>
+              <td><ul><li>The file is listed with Name and File name populated.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">56</td>
+              <td class="id">TC-DI-02</td>
+              <td>Deleted Items — Deleted item shows Deleted-by / Deleted-date</td>
+              <td>Each deleted item records who/when it was deleted.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> at least one file has been deleted and is listed in Deleted Items.</p><ol><li>Inspect a deleted item&#x27;s columns.</li></ol></td>
+              <td><ul><li>&#x27;Deleted by&#x27; and &#x27;Deleted date&#x27; are populated correctly.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">57</td>
+              <td class="id">TC-DI-03</td>
+              <td>Deleted Items — &#x27;No deleted items&#x27; empty state</td>
+              <td>When nothing is deleted, the page shows an empty state.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> Deleted Items contains no recoverable file (nothing deleted, or all restored).</p><ol><li>Restore all deleted files (or start with an empty Deleted Items).</li></ol></td>
+              <td><ul><li>An empty state &#x27;No deleted items&#x27; is displayed.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">58</td>
+              <td class="id">TC-DI-04</td>
+              <td>Deleted Items — Restore button appears after selecting an item</td>
+              <td>Selecting a deleted item reveals the Restore action in the Action Bar.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> at least one file is listed in Deleted Items and no item is currently selected.</p><ol><li>Select the checkbox of a deleted item.</li></ol></td>
+              <td><ul><li>A &#x27;Restore&#x27; button appears in the Action Bar and is enabled.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+        <section>
+          <h2>E. Restore (Workflow &amp; Controls)</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="acc">
+              <td class="num">59</td>
+              <td class="id">TC-RST-01</td>
+              <td>Workflow — Restore with the original name</td>
+              <td>Restore a deleted file without changing any attribute.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a compliant .txt exists in Deleted Items and no file with the same composed name exists in the target folder.</p><ol><li>Deleted Items → select file → Restore → confirm in Restore dialog → Continue.</li><li>In the restore validator, click Restore without changes.</li></ol></td>
+              <td><ul><li>Validator opens with all attributes pre-filled; no errors; file restored under its original name.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">60</td>
+              <td class="id">TC-RST-02</td>
+              <td>Workflow — Restore with a NEW file name (core assignment)</td>
+              <td>Restore and rename by changing Project from test2 to res1 — the heart of the assignment.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a deleted .txt is in Deleted Items; the target folder does NOT already contain the new composed name.</p><ol><li>Deleted Items → select file → Restore → Continue.</li><li>In the restore validator, change Project from &#x27;test2&#x27; to &#x27;res1&#x27;.</li><li>Confirm the delimiter error is dismissed, then click Restore.</li></ol></td>
+              <td><ul><li>Name preview updates to &#x27;res1-XXX-ZZ-ZZ-CA-D-1234.txt&#x27; with the old name struck through.</li><li>Restore enabled; toast &#x27;1 file successfully restored&#x27;; file appears in Files list under the new name.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">61</td>
+              <td class="id">TC-RST-03</td>
+              <td>Workflow — Validator re-runs on restore into a naming-standard folder</td>
+              <td>Restoring into an enforced folder re-opens the validator, not a silent restore.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the target folder has a compliance (naming-standard) setting applied; a file is present in Deleted Items.</p><ol><li>Delete then Restore a file.</li></ol></td>
+              <td><ul><li>The validator opens for the restore operation and re-validates the name.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">62</td>
+              <td class="id">TC-RST-12</td>
+              <td>Workflow — Restore &#x27;Restore Items?&#x27; confirmation and Continue</td>
+              <td>Selecting a deleted item reveals &#x27;Restore (n)&#x27;; clicking it opens the &#x27;Restore items?&#x27; dialog, and Continue proceeds into the Restore validator page.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> at least one file is listed in Deleted Items and none is selected.</p><ol><li>Click Restore in the Delete-items Restore dialog; observe the &#x27;Restore Items&#x27; dialog.</li><li>Click Continue.</li></ol></td>
+              <td><ul><li>The &#x27;Restore Items&#x27; dialog appears; Continue proceeds to the restore validator page.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">63</td>
+              <td class="id">TC-RST-11</td>
+              <td>Workflow — Cancel restore keeps file deleted</td>
+              <td>Cancelling the restore leaves the file in Deleted Items.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a file is listed in Deleted Items and the &#x27;Restore items?&#x27; dialog is open.</p><ol><li>Open the restore validator, click Cancel.</li></ol></td>
+              <td><ul><li>File stays in Deleted Items; nothing appears in the folder.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">64</td>
+              <td class="id">TC-RST-09</td>
+              <td>Workflow — Deleted Items empties after restoring the only file</td>
+              <td>Restoring the sole deleted item yields the empty state.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> Deleted Items contains exactly ONE file, and no same-name file exists in the target folder.</p><ol><li>Restore the only file in Deleted Items; return to Deleted Items.</li></ol></td>
+              <td><ul><li>&#x27;No deleted items&#x27; empty state is shown.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">65</td>
+              <td class="id">TC-RST-13</td>
+              <td>Workflow — Restore Items? dialog, Continue routes to the Restore validator</td>
+              <td>The two-step restore confirmation: &#x27;Restore (1)&#x27; opens the &#x27;Restore items?&#x27; dialog (compliance re-validation notice) whose &#x27;Continue&#x27; leads to the Restore validator page; &#x27;Cancel&#x27; returns to Deleted Items with no change.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the target folder already contains &#x27;res1-XXX-ZZ-ZZ-CA-D-1234.txt&#x27; AND Deleted Items holds a file with the same name.</p><ol><li>In Deleted Items, select the file (checkbox).</li><li>Click &#x27;Restore (1)&#x27; — the first &#x27;Restore items?&#x27; dialog appears with: &quot;Files restored to a folder with a compliance setting applied will be validated to check they conform with the compliance settings.&quot;</li><li>Click &#x27;Cancel&#x27; — you are returned to the Deleted Items page with the file still listed and still selected.</li><li>Select the file again and click &#x27;Restore (1)&#x27;; in the dialog click &#x27;Continue&#x27;.</li></ol></td>
+              <td><ul><li>&#x27;Restore (1)&#x27; opens the &#x27;Restore items?&#x27; dialog carrying the compliance re-validation message.</li><li>Cancel returns to Deleted Items; the item count and the file are UNCHANGED (no restore happened).</li><li>Continue navigates to the Restore validator page (URL contains moduleId=deleted / the Restore page with the file&#x27;s attributes pre-filled).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">66</td>
+              <td class="id">TC-RST-14</td>
+              <td>Workflow — Restore with a changed name succeeds (duplicate resolved)</td>
+              <td>Resolving the duplicate by renaming during restore: change the composed name so it no longer collides, then Restore — the file is written into the folder listing under the new name.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> on the Restore validator page reached from TC-RST-13, the folder still holds &#x27;res1-XXX-ZZ-ZZ-CA-D-1234.txt&#x27;.</p><ol><li>On the Restore validator page (reached via TC-RST-13), leave everything apart from the name-affecting attribute(s) untouched.</li><li>Change the attribute(s) so the composed name differs from the existing &#x27;res1-XXX-ZZ-ZZ-CA-D-1234.txt&#x27; (e.g. change Number 1234 → 1235).</li><li>Confirm the name preview updates and no duplicates error remains.</li><li>Click &#x27;Restore&#x27;.</li></ol></td>
+              <td><ul><li>The name preview shows the NEW composed name; the previously colliding name is no longer used.</li><li>The &#x27;duplicates&#x27; error is cleared and &#x27;Restore&#x27; is enabled.</li><li>After Restore, the file is listed in the Files list under the new name (no &#x27;Couldn&#x27;t restore&#x27; banner).</li><li>The original file with the old name in the folder is untouched; Deleted Items no longer lists the restored file.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">67</td>
+              <td class="id">TC-RST-15</td>
+              <td>Workflow — Restore with the name unchanged fails and reports the duplicate</td>
+              <td>The negative branch of TC-RST-14: leaving the name and every attribute unchanged and clicking Restore returns to the file list and surfaces an error message saying a file with this name already exists.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> on the Restore validator page reached from TC-RST-13, with the folder still holding &#x27;res1-XXX-ZZ-ZZ-CA-D-1234.txt&#x27;.</p><ol><li>On the Restore validator page, change NOTHING (name and all 11 attributes stay as pre-filled).</li><li>Click &#x27;Restore&#x27;.</li><li>Observe the page transition and the error message.</li><li>Open Deleted Items and the target folder.</li></ol></td>
+              <td><ul><li>The page returns to the file list.</li><li>An error message is displayed: &quot;Couldn&#x27;t restore 1 file. A file with this name already exists.&quot;</li><li>No new file is added to the folder; the original file is unchanged.</li><li>The file remains in Deleted Items (item count unchanged).</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"><span class="cmt-tag">USABILITY OBSERVATION (not raised as a defect): the failure reported here is CORRECT, but it is surfaced on the file list AFTER the page navigates away from the Restore validator. The user must then go back into Deleted Items and start the restore again before they can fix the name. A smoother behaviour would keep the user on the validator with the duplicate error shown inline, so the rename can be applied immediately (see TC-RST-14 for the successful rename path). Raising this as a UX suggestion for the team to triage.</span></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">68</td>
+              <td class="id">TC-RST-07</td>
+              <td>Workflow — Restore blocked when the same name already exists in the folder</td>
+              <td>Unlike Upload (which increments the version), Restore is BLOCKED when a file with the same name already exists in the destination folder. Confirmed via the &#x27;Couldn&#x27;t restore 1 file. A file with this name already exists.&#x27; banner.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the target folder contains &#x27;res1-XXX-ZZ-ZZ-CA-D-1234.txt&#x27; AND Deleted Items contains another file with the SAME composed name.</p><ol><li>In Deleted Items, select the duplicate-named file.</li><li>Click &#x27;Restore (1)&#x27; → in the &#x27;Restore items?&#x27; dialog click &#x27;Continue&#x27;.</li><li>On the Restore validator page, leave the name/attributes unchanged and click &#x27;Restore&#x27;.</li><li>Observe the banner / message and inspect the folder + Deleted Items.</li></ol></td>
+              <td><ul><li>The restore FAILS with the banner: &quot;Couldn&#x27;t restore 1 file. A file with this name already exists.&quot;</li><li>No new file is created in the folder; the file stays listed in Deleted Items.</li><li>Documented asymmetry: same-name UPLOAD is allowed (version increments, TC-UPL-25) but same-name RESTORE is rejected — recorded as a product finding.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"><span class="cmt-tag">PRODUCT FINDING — question raised to the team: why is the same-name rule inconsistent between the two write paths? On UPLOAD (TC-UPL-25) a file with an identical composed name is ACCEPTED and becomes a new version (V1 -&gt; V2); on RESTORE (this case) the identical name is REJECTED with &#x27;A file with this name already exists.&#x27; Both operations write into the same naming-standard folder and both result in &#x27;a file with this name&#x27;, so the version-increment path that Upload already applies would appear to be available to Restore as well. Possible explanations to check with the product team: (a) Restore is implemented as a move/recreate of the original item, so version history is not re-resolvable the way a fresh upload is; (b) a deliberate guard to avoid silently resurrecting a deleted item as a newer version of a different file; (c) simply an unaligned implementation between the two services. Not logged as a defect until the intended behaviour is confirmed.</span></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">69</td>
+              <td class="id">TC-RST-04</td>
+              <td>Control — Attributes pre-filled from before deletion</td>
+              <td>Restore validator is pre-populated with the pre-deletion values (no data loss).</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a file with known attribute values has been deleted and is in Deleted Items.</p><ol><li>Delete a file with known attributes, then open Restore.</li></ol></td>
+              <td><ul><li>All 11 attributes show the pre-deletion values.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">70</td>
+              <td class="id">TC-RST-05</td>
+              <td>Control — Delimiter in value during restore is blocked</td>
+              <td>Entering a delimiter inside a value on restore is rejected, mirroring upload.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the Restore validator page is open for a deleted file.</p><ol><li>In the restore validator, set Project to &#x27;test-re-&#x27;.</li></ol></td>
+              <td><ul><li>Banner: &#x27;naming standard (1), and special characters (1)&#x27;; Restore button disabled.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">71</td>
+              <td class="id">TC-RST-06</td>
+              <td>Control — Clear a required attribute during restore blocked</td>
+              <td>Clearing a required attribute on restore keeps Restore disabled.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the Restore validator page is open for a deleted file (all attributes pre-filled).</p><ol><li>In the restore validator, clear the Number attribute.</li></ol></td>
+              <td><ul><li>&#x27;required attributes (1)&#x27; error; Restore disabled.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">72</td>
+              <td class="id">TC-RST-08</td>
+              <td>Control — Out-of-range value during restore blocked</td>
+              <td>An out-of-range attribute on restore is rejected.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the Restore validator page is open for a deleted file.</p><ol><li>Set Number to &#x27;12&#x27; (below the 4–6 range) in the restore validator.</li></ol></td>
+              <td><ul><li>Validation error; Restore disabled.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">73</td>
+              <td class="id">TC-RST-10</td>
+              <td>Control — Restore preserves version and associated attributes</td>
+              <td>Restored file keeps its version and the 4 associated (non-name) attributes.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a compliant file has been deleted (version + associated attributes known) and no same-name conflict exists.</p><ol><li>Restore a file, then inspect its detail.</li></ol></td>
+              <td><ul><li>Version preserved (V1); Status/Revision/Classification/custom fields unchanged from before deletion.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+        <section>
+          <h2>F. Toast &amp; Error Notifications</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="acc">
+              <td class="num">74</td>
+              <td class="id">TC-TOA-01</td>
+              <td>Success toast on upload</td>
+              <td>A success toast confirms a completed upload.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a compliant .txt is ready to upload and the target folder has no name conflict.</p><ol><li>Complete an upload (TC-UPL-01).</li></ol></td>
+              <td><ul><li>Toast: &#x27;1 file has been successfully uploaded.&#x27; is shown and auto-dismisses.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">75</td>
+              <td class="id">TC-TOA-02</td>
+              <td>Success toast on delete</td>
+              <td>A success toast confirms deletion.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the project folder already contains a compliant .txt file.</p><ol><li>Complete a delete (TC-DEL-01).</li></ol></td>
+              <td><ul><li>Toast: &#x27;1 file was deleted.&#x27; is shown.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">76</td>
+              <td class="id">TC-TOA-03</td>
+              <td>Success toast on restore</td>
+              <td>A success toast confirms restoration.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a file is in Deleted Items and no same-name file exists in the target folder.</p><ol><li>Complete a restore (TC-RST-02).</li></ol></td>
+              <td><ul><li>Toast: &#x27;1 file successfully restored&#x27; is shown after the file reappears in Files.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">77</td>
+              <td class="id">TC-TOA-04</td>
+              <td>Success notification on bulk delete from the Holding area</td>
+              <td>Deleting from the Holding area (&#x27;Delete all&#x27; / &#x27;Delete (n)&#x27;) also confirms with a notification, same as a folder delete.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a non-compliant .txt is listed in the Holding area.</p><ol><li>Run TC-DEL-08 or TC-DEL-09 and confirm the delete in the &#x27;Delete file?&#x27; dialog.</li><li>Observe the notification shown after the delete completes.</li></ol></td>
+              <td><ul><li>A success notification is shown (expected to mirror &#x27;1 file was deleted.&#x27;).</li><li>Record the exact wording; if no notification appears, record that as the actual behaviour — the list update alone must still make the result unambiguous.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="acc">
+              <td class="num">78</td>
+              <td class="id">TC-TOA-05</td>
+              <td>Failure notification on restore — duplicate name (confirmed wording)</td>
+              <td>A FAILED restore must surface an explicit error notification, not silence. Wording confirmed by execution: &quot;Couldn&#x27;t restore 1 file. A file with this name already exists.&quot;</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the target folder already contains a file with the same composed name AND Deleted Items holds another file with that name (TC-RST-15 / TC-RST-07).</p><ol><li>Restore a deleted file whose composed name already exists in the folder, without changing any attribute (TC-RST-15).</li><li>Observe the notification that appears after the page returns to the file list.</li></ol></td>
+              <td><ul><li>An error notification is shown with the text: &quot;Couldn&#x27;t restore 1 file. A file with this name already exists.&quot;</li><li>The notification is styled as an ERROR (distinguishable from the green success toast) and names the reason explicitly.</li><li>No success toast is shown for the failed operation.</li></ul></td>
+              <td class="cat">Acceptance</td>
+              <td class="pri">P1</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">79</td>
+              <td class="id">TC-TOA-06</td>
+              <td>Failure notification on upload (network / server error)</td>
+              <td>Upload failures caused by network or server conditions (500 / 502 / 503 / 504, offline) must also be reported explicitly, with Retry offered.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> valid attributes are filled and the upload can be forced to fail (TC-NET-01..05).</p><ol><li>Force each failure condition in turn (offline at start, 500/502/503/504 at submit, drop during processing) and click Upload.</li><li>Observe the notification / error surface and whether a Retry affordance is offered.</li></ol></td>
+              <td><ul><li>Each failure is reported explicitly — no silent hang and no misleading success notification.</li><li>The message does not claim the file was uploaded; a Retry option is offered where documented.</li><li>Record the EXACT wording per condition, and whether it is a toast, an inline error, or a dialog — differences across the conditions are a finding.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">80</td>
+              <td class="id">TC-TOA-07</td>
+              <td>Validation error banner (upload / restore)</td>
+              <td>Validation failures surface as a clear inline banner listing the failing rules (not a silent block, not a toast).</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the upload or restore validator is open with at least one invalid attribute.</p><ol><li>Trigger any upload/restore validation error (e.g. TC-UPL-06 empty attributes, TC-RST-05 delimiter).</li></ol></td>
+              <td><ul><li>A red error banner lists the exact failing rules, e.g. &#x27;1 file doesn&#x27;t comply with compliance settings. Resolve errors with: naming standard (1), and required attributes (1).&#x27;</li><li>Upload/Restore stays disabled while the banner is present.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">81</td>
+              <td class="id">TC-TOA-08</td>
+              <td>Notification behaviour — dismiss, stacking, and no-notification cases</td>
+              <td>Notifications behave consistently: they auto-dismiss or are dismissible, several do not hide each other, and cancelled operations produce no success notification.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> operations that produce notifications (TC-TOA-01..03) and operations that must NOT (cancel paths, TC-DEL-06 / TC-RST-11).</p><ol><li>Trigger a success notification and observe whether it auto-dismisses and how long it stays.</li><li>Trigger two notifications in quick succession; check they stack / queue rather than replace each other.</li><li>Cancel a delete (TC-DEL-06) and cancel a restore (TC-RST-11); check no success notification appears.</li></ol></td>
+              <td><ul><li>Success notifications are visible long enough to read and then auto-dismiss (or are manually dismissible).</li><li>Two concurrent notifications are both readable (stacked/queued), not silently overwritten.</li><li>Cancelled operations raise NO success notification — silence must not be mistaken for success.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+        <section>
+          <h2>G. Non-functional</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="func">
+              <td class="num">82</td>
+              <td class="id">TC-NFR-02</td>
+              <td>Concurrency: two users restore to the same name</td>
+              <td>Parallel restores with identical attributes must not create two files with one name.</td>
+              <td><ol><li>Two sessions restore files with an identical attribute set near-simultaneously.</li></ol></td>
+              <td><ul><li>Reconcile with the same-name UPLOAD finding (TC-UPL-25): verify whether the second restore is version-incremented or still blocked; record the actual behaviour.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">83</td>
+              <td class="id">TC-NFR-05</td>
+              <td>State survives a sign-out / sign-in cycle (delete &amp; restore)</td>
+              <td>Session independence for the two state-changing operations besides upload: a deleted file stays in Deleted Items and a restored file stays in the folder across re-authentication.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a file has been deleted and is listed in Deleted Items; another file has been restored into the folder.</p><ol><li>Delete a file and confirm it moved to Deleted Items; restore another file and confirm it is back in the folder.</li><li>Sign out, then sign back in with the same account.</li><li>Open Deleted Items and the target folder.</li></ol></td>
+              <td><ul><li>The deleted file is STILL listed in Deleted Items (with the same Deleted-by / Deleted-date).</li><li>The restored file is STILL in the folder under its (possibly new) name and version.</li><li>No state silently reverts after re-authentication — a revert here means the operation was not persisted.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+        <section>
+          <h2>H. Cross-browser Compatibility</h2>
+          <table class="cases">
+            <thead><tr>
+              <th>№</th><th>ID</th><th>Test Case</th><th>Description</th>
+              <th>Steps</th><th>Expected</th><th>Category</th><th>Pri</th><th>Comment</th>
+            </tr></thead>
+            <tbody>
+            <tr class="func">
+              <td class="num">84</td>
+              <td class="id">TC-CB-01</td>
+              <td>Core upload / delete / restore flow behaves identically in Chromium and Firefox</td>
+              <td>The assignment flow is a business-critical user journey, so it must not depend on which browser the user happens to open. The same steps are performed in Chromium and in Firefox and the observable behaviour is compared step by step. This case defines WHAT to compare; how the two browsers are driven is an implementation decision.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the same test account, the same project folder and the same starting folder state are available in each browser; the folder has the naming standard applied.</p><ol><li>In Chromium: sign in, open the project folder, upload a compliant .txt (test2-XXX-ZZ-ZZ-CA-D-1234.txt) and confirm it appears in the file list.</li><li>In Chromium: delete the file, confirm it moves to Deleted Items, restore it under a new compliant name and confirm it returns to the file list.</li><li>In Firefox: repeat the same two steps from the same starting folder state.</li><li>Compare the two runs step by step: file-list rendering, upload progress and success toast, delete confirmation dialog, restore dialog and compliance message, final file row (name, version badge, associated attributes).</li></ol></td>
+              <td><ul><li>Both browsers reach the same end state: the restored file is listed once under the new compliant name, with the same version badge and the same associated attributes.</li><li>Every intermediate screen is equivalent across the two browsers: same controls present and enabled, same wording, same toast messages, same dialog behaviour.</li><li>A difference in either browser (a control missing, misplaced or disabled; different wording; the flow breaking) is logged as a compatibility defect with the browser name and version.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">85</td>
+              <td class="id">TC-CB-02</td>
+              <td>WebKit / Safari — core flow usable, engine-specific findings reported separately</td>
+              <td>WebKit is supported but is the lowest-usage engine. The purpose is to confirm the journey is USABLE, not pixel-identical: ACC&#x27;s heavy WebGL / Canvas viewer can produce engine-specific rendering or timing artefacts that are not functional defects.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> the core flow has already been verified in Chromium and Firefox.</p><ol><li>In Safari (WebKit): perform the same core flow — upload a compliant .txt, delete it, restore it under a new name.</li><li>For each difference observed, classify it as a functional failure, a rendering / timing artefact of the engine, or something that only appears at a particular viewport size.</li></ol></td>
+              <td><ul><li>The user can complete upload, delete and restore in WebKit; no step is blocked.</li><li>Purely visual or timing differences (layout, animation, slower load) are recorded as engine / compatibility observations with the browser and version, and are NOT counted as functional defects or treated as a delivery blocker.</li><li>A genuine functional difference is raised as its own defect with repro steps and the engine version.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P3</td>
+              <td class="cmt"></td>
+            </tr>
+            <tr class="func">
+              <td class="num">86</td>
+              <td class="id">TC-CB-03</td>
+              <td>Browser-dependent interactions: file selection, overflow menu, modal dialogs</td>
+              <td>Three interaction types are historically the most browser-sensitive in this UI: the file-selection control, the row overflow (&#x27;...&#x27;) menu, and the modal dialogs (Delete File / Restore Items / naming validator). Each is exercised on every browser in scope.</td>
+              <td><p class="precond"><strong>Pre-condition:</strong> a compliant local .txt file is available and at least one file exists in the folder.</p><ol><li>On each browser in scope: use the Upload entry point, choose a local .txt through the file-selection control and complete the upload.</li><li>On each browser: open the row overflow (&#x27;...&#x27;) menu and confirm each item can be clicked.</li><li>On each browser: open a modal dialog (Delete File / Restore Items / naming validator), type into it, then dismiss it with Cancel and with the confirm button.</li></ol></td>
+              <td><ul><li>File selection and upload complete on every browser in scope.</li><li>The overflow menu opens and its items respond to clicks on every browser in scope.</li><li>Each modal dialog opens, accepts input and closes on every browser in scope, returning the user to the correct page (Cancel = no change; confirm = the action is applied).</li><li>A deviation seen on only one browser is recorded with the browser name and version.</li></ul></td>
+              <td class="cat">Functional</td>
+              <td class="pri">P2</td>
+              <td class="cmt"></td>
+            </tr></tbody>
+          </table>
+        </section>
+  <div class="meta">
+    <h3>Field Rules (naming standard)</h3>
+    <table><thead><tr><th>Attribute</th><th>In file name?</th><th>Type</th><th>Rule</th><th>Notes / demo value</th></tr></thead>
+    <tbody><tr><td>Project</td><td>Yes (naming)</td><td>Text / Alphanumeric</td><td>Length 2–6</td><td>e.g. test2, res1</td></tr><tr><td>Originator</td><td>Yes (naming)</td><td>Text / Alphanumeric</td><td>Project-defined</td><td>In demo = XXX; length per project config</td></tr><tr><td>Volume/System</td><td>Yes (naming)</td><td>Dropdown</td><td>Enumerated</td><td>ZZ, XX</td></tr><tr><td>Level/Location</td><td>Yes (naming)</td><td>Dropdown</td><td>Enumerated</td><td>ZZ, XX, 00, 01, 02, M1, M2, B1, B2</td></tr><tr><td>Type</td><td>Yes (naming)</td><td>Dropdown (custom)</td><td>Enumerated</td><td>28 items, e.g. CA</td></tr><tr><td>Role</td><td>Yes (naming)</td><td>Dropdown (custom)</td><td>Enumerated</td><td>e.g. D</td></tr><tr><td>Number</td><td>Yes (naming)</td><td>Text / Numeric</td><td>Length 4–6</td><td>e.g. 1234</td></tr><tr><td>Status</td><td>No (associated)</td><td>Dropdown (custom)</td><td>Enumerated</td><td>e.g. S0</td></tr><tr><td>Revision</td><td>No (associated)</td><td>Text / Alphanumeric</td><td>Length 3–8</td><td>e.g. dff</td></tr><tr><td>Classification</td><td>No (associated)</td><td>Dropdown (custom)</td><td>Enumerated</td><td>e.g. Ac_05</td></tr><tr><td>custom fields</td><td>No (associated)</td><td>Text / Numeric</td><td>Length 2–5</td><td>e.g. 222</td></tr></tbody></table>
+    <h3>Coverage Matrix</h3>
+    <table><thead><tr><th>Coverage item</th><th>Covered by</th></tr></thead><tbody><tr><td>A. Project visibility by role (no access / read-only)</td><td>TC-ACC-01, TC-ACC-02</td></tr><tr><td>A. Upload granted at Create+Upload and above</td><td>TC-ACC-03, TC-ACC-04, TC-ACC-05</td></tr><tr><td>A. Delete / Restore require Edit or higher</td><td>TC-PRM-01, TC-PRM-02</td></tr><tr><td>A. Locked file cannot be deleted</td><td>TC-DEL-04</td></tr><tr><td>B. Upload entry present, enabled, opens the dialog</td><td>TC-AB-01, TC-AB-02</td></tr><tr><td>B. Deleted Items entry present in the Action Bar</td><td>TC-AB-03</td></tr><tr><td>C. Upload happy path (compliant .txt)</td><td>TC-UPL-01</td></tr><tr><td>C. File-name composed from the 7 naming attributes only</td><td>TC-UPL-02, TC-UPL-03</td></tr><tr><td>C. Associated attributes stored as metadata, never in the name</td><td>TC-UPL-02, TC-UPL-05, TC-RST-10</td></tr><tr><td>C. Attribute values persisted after upload</td><td>TC-UPL-05</td></tr><tr><td>C. Required attributes (all empty / one empty / tooltip)</td><td>TC-UPL-06, TC-UPL-07, TC-UPL-08, TC-RST-06</td></tr><tr><td>C. Character type (Numeric vs Alphanumeric)</td><td>TC-UPL-11, TC-RST-08</td></tr><tr><td>C. Character length boundaries (min / max +/-1)</td><td>TC-UPL-10, TC-RST-08</td></tr><tr><td>C. Special characters in a value</td><td>TC-UPL-12, TC-RST-05</td></tr><tr><td>C. Delimiter inside a value (key negative)</td><td>TC-UPL-13, TC-UPL-14, TC-RST-05</td></tr><tr><td>C. Leading / trailing spaces in a value</td><td>TC-UPL-16</td></tr><tr><td>C. Original file name: special characters / spaces / 257 chars</td><td>TC-UPL-22, TC-UPL-23, TC-UPL-24</td></tr><tr><td>C. Upload blocked until all validation errors are resolved</td><td>TC-UPL-04</td></tr><tr><td>C. Cancel / Remove-all paths leave no new file</td><td>TC-UPL-09, TC-UPL-20, TC-UPL-26, TC-UPL-27</td></tr><tr><td>C. Multiple files in one upload</td><td>TC-UPL-30</td></tr><tr><td>C. Same-name re-upload is allowed, version increments V1-&gt;V2</td><td>TC-UPL-25</td></tr><tr><td>C. Non-compliant file routes to the Holding area</td><td>TC-UPL-17, TC-UPL-18</td></tr><tr><td>C. Bypass naming standard -&gt; confirm / cancel</td><td>TC-UPL-28, TC-UPL-29</td></tr><tr><td>C. Network / server failure at upload and processing</td><td>TC-NET-01, TC-NET-02, TC-NET-03, TC-NET-04, TC-NET-05</td></tr><tr><td>C. File-level failures (size over 5 TB, password-protected)</td><td>TC-FILE-01, TC-FILE-02</td></tr><tr><td>D. Delete a compliant file (workflow + confirmation)</td><td>TC-DEL-01, TC-DEL-02, TC-DEL-06</td></tr><tr><td>D. Row overflow (&#x27;...&#x27;) menu lists the actions</td><td>TC-RM-01</td></tr><tr><td>D. Delete offered only when a file is selected</td><td>TC-DEL-07</td></tr><tr><td>D. Soft delete — recoverable, Deleted-by / Deleted-date shown</td><td>TC-DEL-03, TC-DI-01, TC-DI-02</td></tr><tr><td>D. Holding-area delete (all / selected)</td><td>TC-DEL-08, TC-DEL-09</td></tr><tr><td>D. Deleted Items empty state and Restore entry</td><td>TC-DI-03, TC-DI-04</td></tr><tr><td>E. Restore with the original name</td><td>TC-RST-01</td></tr><tr><td>E. Restore with a NEW file name (core assignment)</td><td>TC-RST-02, TC-RST-12, TC-RST-13</td></tr><tr><td>E. Validator re-runs on restore into a naming-standard folder</td><td>TC-RST-03, TC-RST-04</td></tr><tr><td>E. Cancel restore keeps the file deleted</td><td>TC-RST-11</td></tr><tr><td>E. Same-name restore is rejected (duplicate)</td><td>TC-RST-07, TC-RST-15, TC-TOA-05</td></tr><tr><td>E. Renaming resolves the duplicate and restores</td><td>TC-RST-14</td></tr><tr><td>E. Restore preserves version and associated attributes</td><td>TC-RST-10</td></tr><tr><td>E. Deleted Items empties after restoring the only file</td><td>TC-RST-09</td></tr><tr><td>F. Success notifications (upload / delete / restore / bulk delete)</td><td>TC-TOA-01, TC-TOA-02, TC-TOA-03, TC-TOA-04</td></tr><tr><td>F. Failure and validation messages</td><td>TC-TOA-05, TC-TOA-06, TC-TOA-07</td></tr><tr><td>F. Notification behaviour — dismiss, stacking, absence</td><td>TC-TOA-08</td></tr><tr><td>G. State persists across a sign-out / sign-in cycle</td><td>TC-UPL-31, TC-NFR-05</td></tr><tr><td>G. Concurrency — two users restore to the same name</td><td>TC-NFR-02</td></tr><tr><td>G. Unsupported / large file types — stored, viewing pipeline fails</td><td>TC-FILE-01, TC-FILE-02</td></tr><tr><td>H. Cross-browser equivalence — Chromium vs Firefox</td><td>TC-CB-01</td></tr><tr><td>H. WebKit / Safari usability (non-blocking)</td><td>TC-CB-02</td></tr><tr><td>H. Browser-sensitive controls — file picker, overflow menu, dialogs</td><td>TC-CB-03</td></tr></tbody></table>
+  </div>
+  <footer>ACC Files Tool — Web UI Test Case Design • 86 cases • xxxx</footer>
+</main>
+</body></html>
