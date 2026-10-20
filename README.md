@@ -143,6 +143,27 @@ Use this only if you can decrypt `config/credentials.json` and open that account
 
 After the run, open the newest file under `logs/` and search `CASE` for sample steps 1–21, or `TEST NAME` / `TEST CASE` for the pytest function and JSON row.
 
+### Sample run
+
+A headed `./run.sh` on macOS. The script asks for the password; it is not printed.
+
+```text
+$ ./run.sh you@company.com
+Password:
+============================= test session starts ==============================
+platform darwin -- Python 3.10.11, pytest-9.1.1, pluggy-1.6.0
+rootdir: /path/to/acc-naming-standard-e2e
+configfile: pytest.ini
+plugins: assume-2.13.0, playwright-0.7.0, html-4.2.0, metadata-3.1.1, rerunfailures-16.0.1, anyio-4.11.0, base-url-2.1.0
+collected 1 item
+
+tests/test_acceptance.py .                                               [100%]
+
+============================== 1 passed in 65.14s ==============================
+```
+
+Chromium stays visible for the upload → delete → restore flow. `--slowmo 500` makes this about one minute.
+
 ## Daily use
 
 After the first session works, do **not** use `run.ps1` / `run.sh` for every local rerun. Those scripts are slow on purpose.
