@@ -529,8 +529,8 @@ Tick every row before the framework is considered done:
 | --- | --- |
 | `docs/sample_testcase/test-case-steps.txt` | The 21-step manual walkthrough that the Phase-1 test automates |
 | `docs/sample_testcase/step*.png` | Screenshots of each manual step |
-| `docs/autodesk-field-validation-rules.md` | Field validation rules incl. the delimiter rule |
-| `docs/autodesk-{volume,level,type,role,status,classification}-options.md` | Captured dropdown option lists for the six attribute dropdowns |
+| `docs/field-validation-rules.md` | Field validation rules incl. the delimiter rule |
+| `docs/{volume,level,type,role,status,classification}-options.md` | Captured dropdown option lists for the six attribute dropdowns |
 | `docs/prd-review-and-minimized-plan.md` | Review that led to v1.2 + the minimized Phase-1 plan |
 
 ---

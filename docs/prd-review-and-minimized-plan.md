@@ -2,7 +2,7 @@
 
 **Document**: Review of `PRD.md` v1.1 against the actual test case, DevTools control docs, and Autodesk help documentation
 **Date**: 2026-09-22
-**Status**: Applied — PRD.md updated to v1.2 and docs/autodesk-field-validation-rules.md updated (2026-09-22)
+**Status**: Applied — PRD.md updated to v1.2 and docs/field-validation-rules.md updated (2026-09-22)
 **Goal**: Shrink the PRD to the minimum that automates the **one** test case in `docs/sample_testcase/test-case-steps.txt` (upload → delete → restore in the "Name-standard" folder), then build the rest later.
 
 ---
@@ -14,7 +14,7 @@
 | `PRD.md` v1.1 | Fundamentally sound. Framework-first split is right. ~8 changes + a deferral list needed. |
 | `docs/sample_testcase/test-case-steps.txt` | One E2E flow, 21 steps: upload with attributes → delete → deleted items → restore with renamed project value (incl. one negative validation). |
 | `docs/sample_testcase/*.png` (16 screenshots) | Confirms toolbar-driven flow (checkbox + Action Bar), validator UI, progress dialog, toasts. |
-| `docs/autodesk-*-options.md` (7 files) | 6 custom dropdowns (Volume=2, Level=9, Type=28, Role=20, Status=24, Classification=virtualized/unknown) + 4 text-field validation rules. |
+| `docs/*-options.md` (6 files) + `docs/field-validation-rules.md` | 6 custom dropdowns (Volume=2, Level=9, Type=28, Role=20, Status=24, Classification=virtualized/unknown) + 4 text-field validation rules. |
 | Help: *Add Files To Naming Standard Enforced Folder* | Confirms the **File Validator is a dialog** opened by upload/restore; error categories incl. **delimiter character**; previous-version values highlighted on restore. |
 | Help: *File Naming Standard* | URL 404s — the exact name-composition order is **not** authoritatively documented (see risk R-3). |
 
@@ -60,7 +60,7 @@ The test uses the toolbar for everything: Upload (step 3), Delete (step 10), Del
 Steps 10 and 14 select the row checkbox and use Action Bar buttons; the ⋮ menu is never touched in this test case. Update the FR-01 example to show the toolbar path as the pattern used by the acceptance test, and **defer `row_menu.py` to Phase 2** (keep the portal rule — it applies to the attribute dropdowns regardless).
 
 **B-5. The delimiter validation rule is missing from the test-data docs.**
-Step 18: Project = `res-1` → error "**The delimiter character can't be used in an attribute value**"; step 19: `res1` → error dismissed. The help doc confirms the error category: forbidden characters `< > : " / | ? * \` **plus the delimiter** (`-` in this standard). `docs/autodesk-field-validation-rules.md` must add this rule, and `utils/test_data.py` must expose it (delimiter value + exact error text). This negative check is part of the single test case, so it is **Phase-1 scope**, not a "functional suite" luxury.
+Step 18: Project = `res-1` → error "**The delimiter character can't be used in an attribute value**"; step 19: `res1` → error dismissed. The help doc confirms the error category: forbidden characters `< > : " / | ? * \` **plus the delimiter** (`-` in this standard). `docs/field-validation-rules.md` must add this rule, and `utils/test_data.py` must expose it (delimiter value + exact error text). This negative check is part of the single test case, so it is **Phase-1 scope**, not a "functional suite" luxury.
 
 **B-6. `deleted_items_page.py` — open question Q3 resolved.**
 Step 13 shows Deleted items has its own URL discriminator: `…?folderUrn=…&viewModel=detail&moduleId=deleted` vs `moduleId=folders` for the Files view. It **is** a Page. Remove the "⚠️ verify at runtime" marker.
@@ -180,7 +180,7 @@ acc-naming-standard-e2e/
 8. FR-13/NFR-06: document the phase-1 cleanup deviation (restored file left per run; manual purge).
 9. §6 Milestones: replace with the Phase-1 table above + Phase-2 backlog.
 10. §8 Open questions: close Q3 (Deleted items = Page) and Q6 (Type=28, etc. per docs); add Q: exact name-composition order (verify via Preview), Q: steps 15/16 one dialog or two, Q: Classification virtualized-list selection strategy.
-11. `docs/autodesk-field-validation-rules.md`: add the delimiter rule row + step-18 exact error text.
+11. `docs/field-validation-rules.md`: add the delimiter rule row + step-18 exact error text.
 12. FR-15: unchanged (Chromium + Firefox canary).
 
 ---
